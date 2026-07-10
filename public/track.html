@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ติดตามออเดอร์ — EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=15">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+    <div class="nav-links">
+      <a href="/">← กลับหน้าร้าน</a>
+    </div>
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileNav">
+    <a href="/">← กลับหน้าร้าน</a>
+  </div>
+</nav>
+
+<div class="track-container">
+
+  <div style="padding-top:48px;margin-bottom:32px">
+    <h1 style="font-size:1.75rem;font-weight:900;color:var(--track-title-color,var(--blue-800));margin-bottom:6px">ติดตามออเดอร์</h1>
+    <p style="margin-bottom:24px;color:var(--track-sub-color,var(--gray-400));font-size:0.95rem">ใส่เลขออเดอร์ หรือเบอร์โทรศัพท์ที่ใช้สั่งซื้อ</p>
+    <div style="display:flex;gap:10px">
+      <div class="form-group" style="flex:1;margin:0">
+        <input type="text" id="trackInput"
+          placeholder="เช่น EC12345678 หรือ 0812345678"
+          onkeydown="if(event.key==='Enter')trackOrder()">
+      </div>
+      <button class="btn btn-primary" onclick="trackOrder()" style="border-radius:12px;padding:0 24px;white-space:nowrap">
+        &#128269; ค้นหา
+      </button>
+    </div>
+  </div>
+
+  <div id="trackResults"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/js/cart.js?v=2"></script>
+<script>
+  const statusMap = {
+    pending:   { label: '&#9203; รอชำระเงิน', cls: 'status-pending'   },
+    paid:      { label: '&#128176; รอยืนยัน',  cls: 'status-paid'      },
+    confirmed: { label: '&#9989; ยืนยันแล้ว',  cls: 'status-confirmed' },
+    shipped:   { label: '&#128666; จัดส่งแล้ว', cls: 'status-shipped'  },
+    delivered: { label: '&#128230; รับสินค้าแล้ว', cls: 'status-delivered' },
+    cancelled: { label: '&#10060; ยกเลิก',     cls: 'status-cancelled' },
+  };
+
+  const steps = [
+    { key: 'pending',   emoji: '&#9203;', label: 'รอชำระ'  },
+    { key: 'paid',      emoji: '&#128176;', label: 'โอนแล้ว' },
+    { key: 'confirmed', emoji: '&#9989;',   label: 'ยืนยัน'  },
+    { key: 'shipped',   emoji: '&#128666;', label: 'จัดส่ง'  },
+    { key: 'delivered', emoji: '&#128230;', label: 'รับแล้ว' },
+  ];
+
+  const p = new URLSearchParams(location.search);
+  if (p.get('q')) { document.getElementById('trackInput').value = p.get('q'); trackOrder(); }
+
+  async function trackOrder() {
+    const q = document.getElementById('trackInput').value.trim();
+    if (!q) { showToast('กรุณากรอกเลขออเดอร์หรือเบอร์โทร', 'error'); return; }
+
+    const res = document.getElementById('trackResults');
+    res.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+
+    try {
+      const r      = await fetch('/api/track?q=' + encodeURIComponent(q));
+      const orders = await r.json();
+
+      if (!orders.length) {
+        res.innerHTML = '<div class="track-card">' +
+          '<div class="empty-state">' +
+            '<div class="icon">&#128269;</div>' +
+            '<h3>ไม่พบออเดอร์</h3>' +
+            '<p>ลองตรวจสอบเลขออเดอร์หรือเบอร์โทรอีกครั้ง</p>' +
+          '</div></div>';
+        return;
+      }
+
+      res.innerHTML = orders.map(function(o) {
+        const s       = statusMap[o.status] || { label: o.status, cls: '' };
+        const stepIdx = steps.findIndex(function(st) { return st.key === o.status; });
+
+        const stepsHtml = steps.map(function(st, i) {
+          const cls = i < stepIdx ? 'done' : i === stepIdx ? 'active' : '';
+          return '<div class="step ' + cls + '">' +
+            '<div class="step-dot">' + st.emoji + '</div>' +
+            '<div class="step-label">' + st.label + '</div>' +
+            '</div>';
+        }).join('');
+
+        const itemsHtml = (o.items || []).map(function(it) {
+          return '<div class="summary-item">' +
+            '<div>' +
+              '<span style="font-weight:700;color:var(--gray-800)">' + it.product_name + '</span>' +
+              '<span style="color:var(--gray-400);font-size:0.82rem;margin-left:8px">' + it.color_name + ' · ' + it.size_name + ' &times;' + it.quantity + '</span>' +
+            '</div>' +
+            '<span style="font-weight:800;color:var(--gray-800);white-space:nowrap">&#3647;' + (it.price * it.quantity).toLocaleString() + '</span>' +
+            '</div>';
+        }).join('');
+
+        const date = new Date(o.created_at).toLocaleDateString('th-TH', {day:'numeric',month:'short',year:'numeric'});
+
+        return '<div class="track-card">' +
+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px">' +
+            '<div>' +
+              '<div class="field-label">เลขที่ออเดอร์</div>' +
+              '<div style="font-size:1.6rem;font-weight:900;color:var(--track-id-color,var(--blue-700));letter-spacing:1px">' + o.order_number + '</div>' +
+            '</div>' +
+            '<span class="order-status ' + s.cls + '">' + s.label + '</span>' +
+          '</div>' +
+
+          '<div style="background:var(--track-step-bg,var(--blue-50));border-radius:var(--radius);padding:16px 12px;margin-bottom:24px">' +
+            '<div class="status-steps">' + stepsHtml + '</div>' +
+          '</div>' +
+
+          '<div style="background:var(--gray-50);border-radius:var(--radius);padding:18px;margin-bottom:20px;border:1px solid var(--gray-200)">' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:0.85rem">' +
+              '<div><div class="field-label">ชื่อ</div><div style="font-weight:700">' + o.customer_name + '</div></div>' +
+              '<div><div class="field-label">เบอร์โทร</div><div style="font-weight:700">' + o.customer_phone + '</div></div>' +
+              '<div style="grid-column:1/-1"><div class="field-label">ที่อยู่จัดส่ง</div><div style="font-weight:600;line-height:1.6">' + o.customer_address + '</div></div>' +
+              '<div><div class="field-label">วันที่สั่ง</div><div style="font-weight:600">' + date + '</div></div>' +
+            '</div>' +
+          '</div>' +
+
+          itemsHtml +
+
+          '<div class="summary-total">' +
+            '<span>ยอดรวม</span>' +
+            '<span>&#3647;' + o.total_amount.toLocaleString() + '</span>' +
+          '</div>' +
+
+          (o.status === 'pending' ?
+            '<div style="margin-top:24px">' +
+              '<a href="/payment.html?order=' + o.order_number + '" class="btn btn-orange btn-block">&#128179; แจ้งโอนเงิน</a>' +
+            '</div>' : '') +
+
+          (o.notes ?
+            '<div class="info-box" style="margin-top:16px">&#128221; ' + o.notes + '</div>' : '') +
+
+          '</div>';
+      }).join('');
+
+    } catch(e) {
+      res.innerHTML = '<div class="track-card"><div class="info-box" style="color:#8B1A1A">เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง</div></div>';
+    }
+  }
+</script>
+</body>
+</html>

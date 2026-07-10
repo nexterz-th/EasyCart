@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo">🌟 EasyCart</div>
+      <p>ระบบจัดการร้านค้า</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>📊 Dashboard</h1>
+      <div class="topbar-right">
+        <span style="color:var(--text-light);font-size:0.9rem" id="todayDate"></span>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="icon">⏳</div><div class="value">-</div><div class="label">กำลังโหลด...</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>📋 ออเดอร์ล่าสุด</h3>
+        <a href="/admin/orders.html" class="btn btn-outline btn-sm">ดูทั้งหมด →</a>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>เลขออเดอร์</th>
+            <th>ลูกค้า</th>
+            <th>ยอด</th>
+            <th>สถานะ</th>
+            <th>วันที่</th>
+          </tr>
+        </thead>
+        <tbody id="recentOrders">
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-light)">กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('th-TH', { dateStyle: 'full' });
+
+  async function loadDashboard() {
+    const statsRes = await adminFetch('/api/admin/stats');
+    const stats = await statsRes.json();
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card stat-blue">
+        <div class="icon">📦</div>
+        <div class="value">${stats.total_orders}</div>
+        <div class="label">ออเดอร์ทั้งหมด</div>
+      </div>
+      <div class="stat-card stat-orange">
+        <div class="icon">⏳</div>
+        <div class="value">${stats.pending_orders}</div>
+        <div class="label">รอชำระเงิน</div>
+      </div>
+      <div class="stat-card stat-yellow">
+        <div class="icon">💰</div>
+        <div class="value">${stats.paid_orders}</div>
+        <div class="label">รอยืนยัน</div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="icon">💵</div>
+        <div class="value">฿${stats.total_revenue.toLocaleString()}</div>
+        <div class="label">รายได้รวม</div>
+      </div>
+      <div class="stat-card stat-blue">
+        <div class="icon">👕</div>
+        <div class="value">${stats.total_products}</div>
+        <div class="label">สินค้าทั้งหมด</div>
+      </div>
+    `;
+
+    const ordersRes = await adminFetch('/api/admin/orders');
+    const orders = await ordersRes.json();
+    const recent = orders.slice(0, 10);
+
+    document.getElementById('recentOrders').innerHTML = recent.length ? recent.map(o => `
+      <tr>
+        <td><a href="/admin/orders.html" style="color:var(--primary-dark);font-weight:700">${o.order_number}</a></td>
+        <td>${o.customer_name}<br><small style="color:var(--text-light)">${o.customer_phone}</small></td>
+        <td style="font-weight:700;color:var(--orange)">฿${o.total_amount.toLocaleString()}</td>
+        <td>${statusBadge(o.status)}</td>
+        <td style="color:var(--text-light);font-size:0.85rem">${new Date(o.created_at).toLocaleDateString('th-TH')}</td>
+      </tr>
+    `).join('') : `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-light)">ยังไม่มีออเดอร์</td></tr>`;
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

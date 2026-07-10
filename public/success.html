@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สั่งซื้อสำเร็จ — EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=15">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+  </div>
+</nav>
+
+<div class="success-container">
+  <div class="card" style="padding:48px 40px;margin-top:40px">
+
+    <span class="success-icon">🎉</span>
+    <h1 style="font-size:1.75rem;font-weight:900;color:var(--blue-800);margin-bottom:8px">
+      สั่งซื้อสำเร็จแล้ว!
+    </h1>
+    <p style="color:var(--gray-400);margin-bottom:36px">ขอบคุณที่ไว้วางใจ EasyCart นะคะ</p>
+
+    <!-- เลขออเดอร์ -->
+    <div style="background:var(--blue-50);border:1.5px solid var(--blue-100);border-radius:14px;padding:24px;margin-bottom:20px">
+      <div style="font-size:0.8rem;color:var(--gray-400);font-weight:600;margin-bottom:6px">เลขที่ออเดอร์ของคุณ</div>
+      <div id="orderNum" style="font-size:2rem;font-weight:900;color:var(--blue-700);letter-spacing:2px"></div>
+      <div style="font-size:0.78rem;color:var(--gray-400);margin-top:6px">บันทึกเลขนี้ไว้ใช้ติดตามสถานะ</div>
+    </div>
+
+    <!-- ยอดชำระ -->
+    <div style="background:var(--brown-600);border-radius:14px;padding:20px;margin-bottom:28px">
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.7);margin-bottom:4px">ยอดที่ต้องชำระ</div>
+      <div id="totalAmt" style="font-size:2.2rem;font-weight:900;color:white"></div>
+    </div>
+
+    <!-- ขั้นตอน -->
+    <div class="info-box-warn" style="text-align:left;margin-bottom:28px">
+      <h3>📋 ขั้นตอนถัดไป</h3>
+      <ol style="padding-left:18px;line-height:2.2;color:var(--gray-600);font-size:0.9rem">
+        <li id="bankStep">โอนเงินมาที่ <strong style="color:var(--gray-800)">KBank xxx-x-xxxxx-x</strong></li>
+        <li>กดปุ่ม <strong style="color:var(--brown-600)">"แจ้งโอนเงิน"</strong> แล้วแนบสลิป</li>
+        <li>รอร้านยืนยัน <span style="color:var(--gray-400)">(ภายใน 1–2 ชั่วโมง)</span></li>
+        <li>รับของภายใน 2–3 วันทำการ 📦</li>
+      </ol>
+    </div>
+
+    <!-- ปุ่ม -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a id="payLink" href="#" class="btn btn-orange btn-block" style="font-size:0.95rem;padding:15px">
+        💳 แจ้งโอนเงินเลย
+      </a>
+      <a href="/track.html" class="btn btn-outline btn-block" style="font-size:0.92rem">
+        🔍 ติดตามสถานะออเดอร์
+      </a>
+      <a href="/" class="btn btn-block" style="background:var(--gray-100);color:var(--gray-600);font-size:0.88rem;border-radius:14px">
+        กลับหน้าร้าน
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const p = new URLSearchParams(location.search);
+  const orderNum = p.get('order') || '—';
+  const total    = parseFloat(p.get('total') || 0);
+  document.getElementById('orderNum').textContent  = orderNum;
+  document.getElementById('totalAmt').textContent  = '฿' + total.toLocaleString();
+  document.getElementById('payLink').href = '/payment.html?order=' + orderNum;
+</script>
+</body>
+</html>

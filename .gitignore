@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# secrets / config
+.env
+.env.*
+!.env.example
+
+# database (SQLite)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# uploaded / user content (keep folder structure via .gitkeep)
+uploads/**
+public/uploads/**
+!uploads/**/.gitkeep
+!public/uploads/**/.gitkeep
+
+# logs & os junk
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

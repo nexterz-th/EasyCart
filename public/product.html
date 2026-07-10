@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายละเอียดสินค้า — EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=16">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+    <div class="nav-links">
+      <a href="/">← กลับหน้าร้าน</a>
+      <a href="#" class="cart-btn" onclick="toggleCart(event)">
+        🛒 ตะกร้า <span class="cart-count" id="cartCount">0</span>
+      </a>
+    </div>
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileNav">
+    <a href="/">← กลับหน้าร้าน</a>
+    <a href="#" class="cart-btn" onclick="toggleCart(event)">🛒 ตะกร้า</a>
+  </div>
+</nav>
+
+<div class="product-page-layout" id="productLayout">
+  <div style="grid-column:1/-1">
+    <div class="loader"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- Size Chart Modal -->
+<div id="sizeChartOverlay" onclick="closeSizeChart()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;cursor:pointer;padding:20px;box-sizing:border-box;overflow-y:auto">
+  <div onclick="event.stopPropagation()" style="max-width:720px;margin:auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eee">
+      <span style="font-weight:800;font-size:1rem">📐 ตาราง Size</span>
+      <button onclick="closeSizeChart()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">&#x2715;</button>
+    </div>
+    <div style="padding:16px">
+      <img id="sizeChartImg" src="" style="width:100%;border-radius:10px;display:block">
+    </div>
+  </div>
+</div>
+
+<!-- Cart -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart(event)"></div>
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h3>&#128722; ตะกร้าสินค้า</h3>
+    <button class="cart-close" onclick="toggleCart(event)">&#x2715;</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span>ยอดรวม</span>
+      <span id="cartTotal">฿0</span>
+    </div>
+    <a href="/checkout.html" class="btn btn-orange btn-block">ดำเนินการชำระเงิน &#8594;</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/js/cart.js?v=2"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const pid    = parseInt(params.get('id'));
+  if (!pid) location.href = '/';
+
+  let product  = null;
+  let selColor = null;
+  let selSize  = null;
+  let qty      = 1;
+  let mainImgs = [];
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function load() {
+    try {
+      const r = await fetch('/api/products/' + pid);
+      product  = await r.json();
+      if (!product || product.error) { location.href = '/'; return; }
+      document.title = product.name + ' — EasyCart';
+      selColor = product.colors && product.colors[0] ? product.colors[0] : null;
+      pgImgs = (product.gallery_enabled !== 0 && product.gallery && product.gallery.length)
+        ? product.gallery : [];
+      render();
+    } catch(e) { location.href = '/'; }
+  }
+
+  function render() {
+    const layout = document.getElementById('productLayout');
+
+    var descHtml = product.description
+      ? '<div><div class="field-label">รายละเอียดสินค้า</div><div class="desc-box">' + esc(product.description) + '</div></div>'
+      : '';
+
+    layout.innerHTML =
+      '<div>' +
+        '<div class="gallery-wrap">' +
+          '<div class="gallery-main" id="galleryMain"><span class="no-img">&#128085;</span></div>' +
+          '<button class="gallery-arrow gallery-arrow-prev hidden" id="galleryPrev" onclick="slideImg(-1)">&#8592;</button>' +
+          '<button class="gallery-arrow gallery-arrow-next hidden" id="galleryNext" onclick="slideImg(1)">&#8594;</button>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-top:12px">' +
+          '<button class="gallery-thumb-arrow gallery-thumb-arrow-prev hidden" id="thumbPrev" onclick="scrollThumbs(-1)" style="position:static;transform:none;flex-shrink:0">&#8249;</button>' +
+          '<div class="gallery-thumbs" id="galleryThumbs" style="flex:1;min-width:0"></div>' +
+          '<button class="gallery-thumb-arrow gallery-thumb-arrow-next hidden" id="thumbNext" onclick="scrollThumbs(1)" style="position:static;transform:none;flex-shrink:0">&#8250;</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="product-info-panel">' +
+        '<div>' +
+          '<h1 style="font-size:1.75rem;font-weight:900;color:var(--product-name-color,var(--blue-800));margin-bottom:10px;line-height:1.3">' + esc(product.name) + '</h1>' +
+          '<div class="price" style="font-size:2rem;font-weight:900;color:var(--product-price-color,var(--brown-600))">&#3647;' + (product.price ? product.price.toLocaleString() : '0') + '</div>' +
+        '</div>' +
+
+        '<div>' +
+          '<div class="field-label">สีที่มี</div>' +
+          '<div class="color-list" id="colorList"></div>' +
+          '<div id="colorLabel" style="font-size:0.82rem;color:var(--gray-400);margin-top:6px;min-height:1.1em"></div>' +
+        '</div>' +
+
+        '<div>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
+            '<div class="field-label" style="margin-bottom:0">ไซส์</div>' +
+            '<button id="sizeChartBtn" onclick="openSizeChart()" style="display:none;font-size:0.78rem;font-weight:700;color:var(--primary,#0284C7);background:none;border:1.5px solid var(--primary,#0284C7);border-radius:8px;padding:3px 10px;cursor:pointer">📐 ดูตาราง Size</button>' +
+          '</div>' +
+          '<div class="size-list" id="sizeList"></div>' +
+          '<div id="stockLabel" style="font-size:0.82rem;color:var(--gray-400);margin-top:8px;min-height:1.1em">กรุณาเลือกไซส์</div>' +
+        '</div>' +
+
+        '<div>' +
+          '<div class="field-label">จำนวน</div>' +
+          '<div class="qty-ctrl">' +
+            '<button class="qty-btn" onclick="changeQty(-1)">&#8722;</button>' +
+            '<span class="qty-num" id="qtyNum">1</span>' +
+            '<button class="qty-btn" onclick="changeQty(1)">+</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<button class="btn btn-orange btn-block" onclick="doAddToCart()" style="padding:16px;font-size:1rem">&#128722; เพิ่มลงตะกร้า</button>' +
+
+        descHtml +
+      '</div>';
+
+    renderColors();
+    renderSizes();
+    updateGallery();
+    updateCartUI();
+    if (selColor) setColorLabel(selColor.name);
+  }
+
+  function setColorLabel(name) {
+    var el = document.getElementById('colorLabel');
+    if (el) el.textContent = 'สีที่เลือก: ' + name;
+  }
+
+  function renderColors() {
+    var list = document.getElementById('colorList');
+    if (!list) return;
+    if (!product.colors || !product.colors.length) {
+      list.innerHTML = '<span style="color:var(--gray-400);font-size:.85rem">—</span>'; return;
+    }
+    list.innerHTML = product.colors.map(function(c) {
+      var active = selColor && selColor.id === c.id ? 'active' : '';
+      return '<div class="color-item ' + active + '" onclick="selectColor(' + c.id + ')" title="' + esc(c.name) + '">' +
+        '<div class="color-swatch" style="background:' + (c.hex_code || '#ccc') + '"></div>' +
+        '<div class="color-label">' + esc(c.name) + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function currentSizes() {
+    return (selColor && selColor.sizes) ? selColor.sizes : (product.sizes || []);
+  }
+
+  function renderSizes() {
+    var list = document.getElementById('sizeList');
+    if (!list) return;
+    var sizes = currentSizes();
+    if (!sizes.length) { list.innerHTML = '<span style="color:var(--gray-400);font-size:.85rem">—</span>'; return; }
+    // revalidate selSize stock for current color
+    if (selSize) {
+      var updated = sizes.find(function(s) { return s.id === selSize.id; });
+      selSize = updated || null;
+    }
+    list.innerHTML = sizes.map(function(s) {
+      var oos = s.stock === 0;
+      var act = selSize && selSize.id === s.id ? 'active' : '';
+      var oosCls = oos ? 'out' : '';
+      return '<button class="size-btn ' + act + ' ' + oosCls + '" ' +
+        (oos ? 'disabled' : 'onclick="selectSize(' + s.id + ')"') + '>' +
+        esc(s.name) + '</button>';
+    }).join('');
+    updateStockLabel();
+  }
+
+  function selectColor(id) {
+    selColor = product.colors.find(function(c) { return c.id === id; });
+    selSize  = null; qty = 1;
+    renderColors(); renderSizes(); updateGallery();
+    if (selColor) {
+      setColorLabel(selColor.name);
+      // jump to first color image (after gallery images)
+      if (pgImgs.length) showImg(pgImgs.length);
+    }
+  }
+
+  function currentPrice() {
+    return (selSize && selSize.size_price != null) ? selSize.size_price : product.price;
+  }
+
+  function updatePriceDisplay() {
+    var el = document.querySelector('.price');
+    if (el) el.innerHTML = '&#3647;' + currentPrice().toLocaleString();
+  }
+
+  function selectSize(id) {
+    selSize = currentSizes().find(function(s) { return s.id === id; });
+    renderSizes();
+    updatePriceDisplay();
+  }
+
+  function updateStockLabel() {
+    var el = document.getElementById('stockLabel');
+    if (!el) return;
+    if (selSize) {
+      if (selSize.stock <= 0) {
+        el.textContent = 'สินค้าหมด'; el.style.color = '#8B1A1A';
+      } else if (selSize.stock <= 5) {
+        el.textContent = 'เหลือเพียง ' + selSize.stock + ' ชิ้น'; el.style.color = '#7A5500';
+      } else {
+        el.textContent = 'มีสินค้า ' + selSize.stock + ' ชิ้น'; el.style.color = 'var(--gray-400)';
+      }
+    } else {
+      el.textContent = 'กรุณาเลือกไซส์'; el.style.color = 'var(--gray-400)';
+    }
+  }
+
+  function changeQty(d) {
+    var max = selSize ? selSize.stock : 99;
+    qty = Math.max(1, Math.min(qty + d, max || 99));
+    var el = document.getElementById('qtyNum');
+    if (el) el.textContent = qty;
+  }
+
+  var currentImgIdx = 0;
+
+  function updateGallery() {
+    var main   = document.getElementById('galleryMain');
+    var thumbs = document.getElementById('galleryThumbs');
+    if (!main || !thumbs) return;
+
+    var colorImgs = selColor && selColor.images ? selColor.images : [];
+    // รวม: gallery slideshow ก่อน แล้วตามด้วยรูปสีที่เลือก
+    mainImgs = pgImgs.concat(colorImgs);
+    currentImgIdx = 0;
+
+    if (!mainImgs.length) {
+      main.innerHTML = '<span class="no-img">&#128085;</span>';
+      thumbs.innerHTML = '';
+      setArrows(false); setThumbArrows(false);
+      return;
+    }
+
+    // thumbnails — ทุกรูปแสดง, รูปสีมี color dot เล็กๆ
+    thumbs.innerHTML = mainImgs.map(function(img, i) {
+      var isColor = i >= pgImgs.length;
+      return '<div class="gallery-thumb' + (i === 0 ? ' active' : '') + '" onclick="showImg(' + i + ')" style="position:relative">' +
+        '<img src="' + img.image_path + '" loading="lazy">' +
+        (isColor && selColor ? '<span style="position:absolute;bottom:3px;right:3px;width:10px;height:10px;border-radius:50%;background:' + selColor.hex_code + ';border:1.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>' : '') +
+        '</div>';
+    }).join('');
+
+    setThumbArrows(mainImgs.length > 4);
+    showImg(0);
+  }
+
+  function showImg(idx) {
+    if (idx < 0) idx = mainImgs.length - 1;
+    if (idx >= mainImgs.length) idx = 0;
+    currentImgIdx = idx;
+    var img  = mainImgs[idx];
+    var main = document.getElementById('galleryMain');
+    if (!main || !img) return;
+    main.innerHTML = '<img src="' + img.image_path + '" alt="' + esc(product.name) + '" loading="lazy">';
+    document.querySelectorAll('.gallery-thumb').forEach(function(t, i) {
+      t.classList.toggle('active', i === idx);
+      if (i === idx) {
+        var thumbsEl = document.getElementById('galleryThumbs');
+        if (thumbsEl) thumbsEl.scrollTo({ left: t.offsetLeft - 10, behavior: 'smooth' });
+      }
+    });
+    setArrows(mainImgs.length > 1);
+  }
+
+  function slideImg(dir) { showImg(currentImgIdx + dir); }
+
+  function setArrows(show) {
+    var on = show && sliderEnabled;
+    var p = document.getElementById('galleryPrev');
+    var n = document.getElementById('galleryNext');
+    if (p) p.classList.toggle('hidden', !on);
+    if (n) n.classList.toggle('hidden', !on);
+  }
+
+  function setThumbArrows(show) {
+    var on = show && sliderEnabled;
+    var p = document.getElementById('thumbPrev');
+    var n = document.getElementById('thumbNext');
+    if (p) p.classList.toggle('hidden', !on);
+    if (n) n.classList.toggle('hidden', !on);
+  }
+
+  function scrollThumbs(dir) {
+    var el = document.getElementById('galleryThumbs');
+    if (el) el.scrollBy({ left: dir * 180, behavior: 'smooth' });
+  }
+
+  function doAddToCart() {
+    if (!selColor) { showToast('กรุณาเลือกสี', 'error');   return; }
+    if (!selSize)  { showToast('กรุณาเลือกไซส์', 'error'); return; }
+    addToCart({
+      product_id: product.id,  product_name: product.name,
+      color_id:   selColor.id, color_name:   selColor.name,
+      size_id:    selSize.id,  size_name:    selSize.name,
+      price: currentPrice(),    quantity: qty,
+      image: selColor.images && selColor.images[0] ? selColor.images[0].image_path : null,
+    });
+  }
+
+  // Product gallery images (slideshow)
+  var pgImgs = [];
+
+  // Theme settings
+  var sizeChartSrc = '';
+  var sliderEnabled = true;
+  fetch('/api/theme').then(r=>r.json()).then(function(t) {
+    sizeChartSrc = t.size_chart_image || '';
+    sliderEnabled = t.gallery_slider_enabled !== '0';
+    var btn = document.getElementById('sizeChartBtn');
+    if (btn && sizeChartSrc) btn.style.display = 'inline-block';
+    // re-render gallery arrows based on setting
+    if (!sliderEnabled) { setArrows(false); setThumbArrows(false); }
+  });
+  function openSizeChart() {
+    if (!sizeChartSrc) return;
+    document.getElementById('sizeChartImg').src = sizeChartSrc;
+    document.getElementById('sizeChartOverlay').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSizeChart() {
+    document.getElementById('sizeChartOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  load();
+</script>
+</body>
+</html>

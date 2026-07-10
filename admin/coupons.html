@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการคูปอง - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>
+    .coupon-table { width:100%; border-collapse:collapse; }
+    .coupon-table th { background:var(--bg); padding:10px 14px; text-align:left; font-size:0.8rem; font-weight:700; color:var(--text-light); border-bottom:2px solid var(--border); }
+    .coupon-table td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:0.88rem; vertical-align:middle; }
+    .coupon-table tr:last-child td { border-bottom:none; }
+    .coupon-code { font-family:monospace; font-size:0.95rem; font-weight:800; background:var(--bg); padding:3px 10px; border-radius:7px; color:var(--primary-dark); letter-spacing:.5px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; }
+    .badge-green  { background:#d1fae5; color:#065f46; }
+    .badge-red    { background:#fee2e2; color:#991b1b; }
+    .badge-blue   { background:#dbeafe; color:#1d4ed8; }
+    .badge-orange { background:#ffedd5; color:#9a3412; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    @media(max-width:640px){ .form-row,.form-row-3 { grid-template-columns:1fr; } }
+    .section-card { background:#fff; border-radius:16px; padding:24px 28px; box-shadow:var(--shadow); margin-bottom:24px; }
+    .section-title { font-size:1rem; font-weight:800; color:var(--primary-dark); margin:0 0 20px; padding-bottom:12px; border-bottom:2px solid var(--border); display:flex; align-items:center; gap:8px; }
+    .empty-row td { text-align:center; padding:40px; color:var(--text-light); }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo">🌟 EasyCart</div>
+      <p>ระบบจัดการร้านค้า</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item active" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>🎟️ คูปองส่วนลด</h1>
+    </div>
+
+    <!-- ฟอร์มสร้างคูปอง -->
+    <div class="section-card">
+      <h3 class="section-title">➕ สร้างคูปองใหม่</h3>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group">
+          <label>โค้ดคูปอง *</label>
+          <input type="text" id="newCode" placeholder="เช่น EASY10, SALE50" style="text-transform:uppercase">
+        </div>
+        <div class="form-group">
+          <label>ประเภทส่วนลด *</label>
+          <select id="newType" onchange="updateValueLabel()">
+            <option value="percent">% ลดเปอร์เซ็นต์</option>
+            <option value="fixed">฿ ลดจำนวนคงที่</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-3" style="margin-bottom:14px">
+        <div class="form-group">
+          <label id="valueLabel">มูลค่าส่วนลด (%) *</label>
+          <input type="number" id="newValue" placeholder="เช่น 10" min="0" step="any">
+        </div>
+        <div class="form-group">
+          <label>ยอดขั้นต่ำ (฿)</label>
+          <input type="number" id="newMinOrder" placeholder="0 = ไม่มีขั้นต่ำ" min="0">
+        </div>
+        <div class="form-group">
+          <label>จำนวนสิทธิ์สูงสุด</label>
+          <input type="number" id="newMaxUses" placeholder="ว่าง = ไม่จำกัด" min="1">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:20px">
+        <div class="form-group">
+          <label>วันหมดอายุ</label>
+          <input type="date" id="newExpires">
+        </div>
+        <div></div>
+      </div>
+      <button class="btn btn-primary" onclick="createCoupon()">➕ สร้างคูปอง</button>
+    </div>
+
+    <!-- ตารางคูปอง -->
+    <div class="section-card">
+      <h3 class="section-title">📋 คูปองทั้งหมด</h3>
+      <div style="overflow-x:auto">
+        <table class="coupon-table" id="couponTable">
+          <thead>
+            <tr>
+              <th>โค้ด</th>
+              <th>ส่วนลด</th>
+              <th>ยอดขั้นต่ำ</th>
+              <th>ใช้ไปแล้ว / สูงสุด</th>
+              <th>หมดอายุ</th>
+              <th>สถานะ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="couponBody">
+            <tr class="empty-row"><td colspan="7">กำลังโหลด...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const KEY = sessionStorage.getItem('adminKey');
+if (!KEY) location.href = '/admin/';
+function logout() { sessionStorage.clear(); location.href = '/admin/'; }
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (type==='error'?' toast-error':'');
+  clearTimeout(t._t); t._t = setTimeout(() => t.className='toast',3000);
+}
+function h(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateValueLabel() {
+  const type = document.getElementById('newType').value;
+  document.getElementById('valueLabel').textContent = type === 'percent' ? 'มูลค่าส่วนลด (%) *' : 'มูลค่าส่วนลด (฿) *';
+}
+
+async function loadCoupons() {
+  const res = await fetch('/api/admin/coupons', { headers:{ 'x-admin-key': KEY } });
+  const list = await res.json();
+  const body = document.getElementById('couponBody');
+  if (!list.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">ยังไม่มีคูปอง</td></tr>'; return; }
+  body.innerHTML = list.map(c => {
+    const discount = c.discount_type === 'percent' ? `${c.discount_value}%` : `฿${c.discount_value.toLocaleString()}`;
+    const minOrder = c.min_order > 0 ? `฿${c.min_order.toLocaleString()}` : '—';
+    const uses = `${c.used_count} / ${c.max_uses ?? '∞'}`;
+    const expires = c.expires_at ? c.expires_at.slice(0,10) : '—';
+    const expired = c.expires_at && new Date(c.expires_at) < new Date();
+    const full = c.max_uses !== null && c.used_count >= c.max_uses;
+    const statusBadge = !c.is_active ? '<span class="badge badge-red">ปิด</span>'
+      : expired ? '<span class="badge badge-orange">หมดอายุ</span>'
+      : full ? '<span class="badge badge-orange">หมดสิทธิ์</span>'
+      : '<span class="badge badge-green">ใช้ได้</span>';
+    return `<tr>
+      <td><span class="coupon-code">${h(c.code)}</span></td>
+      <td><span class="badge badge-blue">${h(discount)}</span></td>
+      <td>${minOrder}</td>
+      <td>${uses}</td>
+      <td>${expires}</td>
+      <td>${statusBadge}</td>
+      <td>
+        <button class="btn btn-sm ${c.is_active?'btn-outline':'btn-primary'}" onclick="toggleCoupon(${c.id},${c.is_active})" style="margin-right:6px">
+          ${c.is_active?'ปิด':'เปิด'}
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCoupon(${c.id},'${h(c.code)}')">ลบ</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function createCoupon() {
+  const code = document.getElementById('newCode').value.trim().toUpperCase();
+  const type = document.getElementById('newType').value;
+  const value = document.getElementById('newValue').value;
+  const minOrder = document.getElementById('newMinOrder').value;
+  const maxUses = document.getElementById('newMaxUses').value;
+  const expires = document.getElementById('newExpires').value;
+  if (!code || !value) { showToast('กรุณากรอกโค้ดและมูลค่าส่วนลด', 'error'); return; }
+  if (type === 'percent' && (parseFloat(value) <= 0 || parseFloat(value) > 100)) {
+    showToast('เปอร์เซ็นต์ต้องอยู่ระหว่าง 1–100', 'error'); return;
+  }
+  const res = await fetch('/api/admin/coupons', {
+    method:'POST', headers:{ 'Content-Type':'application/json', 'x-admin-key': KEY },
+    body: JSON.stringify({ code, discount_type:type, discount_value:value, min_order:minOrder||0, max_uses:maxUses||null, expires_at:expires||null })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    showToast('สร้างคูปองสำเร็จ');
+    ['newCode','newValue','newMinOrder','newMaxUses','newExpires'].forEach(id => document.getElementById(id).value='');
+    loadCoupons();
+  } else showToast(data.error||'เกิดข้อผิดพลาด', 'error');
+}
+
+async function toggleCoupon(id, current) {
+  const c = await (await fetch(`/api/admin/coupons/${id}`, { headers:{ 'x-admin-key':KEY } })).json();
+  // fetch full coupon to update
+  const all = await (await fetch('/api/admin/coupons', { headers:{ 'x-admin-key':KEY } })).json();
+  const coupon = all.find(x => x.id === id);
+  if (!coupon) return;
+  await fetch(`/api/admin/coupons/${id}`, {
+    method:'PUT', headers:{ 'Content-Type':'application/json', 'x-admin-key':KEY },
+    body: JSON.stringify({ ...coupon, is_active: current ? 0 : 1 })
+  });
+  loadCoupons();
+}
+
+async function deleteCoupon(id, code) {
+  if (!confirm(`ลบคูปอง "${code}" หรือไม่?`)) return;
+  await fetch(`/api/admin/coupons/${id}`, { method:'DELETE', headers:{ 'x-admin-key':KEY } });
+  showToast('ลบคูปองแล้ว');
+  loadCoupons();
+}
+
+loadCoupons();
+</script>
+</body>
+</html>

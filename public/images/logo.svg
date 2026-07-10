@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="100" fill="#A8C5CF"/>
+
+  <!-- Sun body with spiral rays - hand-drawn organic style -->
+  <g fill="#E8DDD0">
+    <!-- Center spiral -->
+    <path d="M100 100
+      C100 92, 108 88, 112 93
+      C116 98, 113 106, 107 108
+      C101 110, 95 106, 94 100
+      C93 94, 97 88, 103 87
+      C109 86, 115 90, 116 97
+      C117 104, 113 111, 107 113
+      C101 115, 94 111, 92 105
+      C90 99, 93 91, 99 88
+      C105 85, 113 87, 116 93"
+      fill="none" stroke="#E8DDD0" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Ray 1 - top -->
+    <path d="M100 72 C97 65, 95 58, 98 48 C100 42, 103 40, 104 46 C105 52, 102 60, 100 72Z"/>
+
+    <!-- Ray 2 - top right -->
+    <path d="M118 78 C124 72, 130 67, 138 60 C142 56, 144 58, 141 62 C138 66, 130 70, 118 78Z"/>
+
+    <!-- Ray 3 - right -->
+    <path d="M126 97 C133 94, 140 92, 150 93 C155 93, 156 97, 151 99 C146 101, 138 99, 126 97Z"/>
+
+    <!-- Ray 4 - bottom right -->
+    <path d="M118 115 C124 122, 128 129, 130 140 C131 145, 128 147, 125 143 C122 139, 119 131, 118 115Z"/>
+
+    <!-- Ray 5 - bottom -->
+    <path d="M100 125 C102 133, 103 141, 100 150 C98 155, 95 155, 94 150 C93 145, 95 137, 100 125Z"/>
+
+    <!-- Ray 6 - bottom left -->
+    <path d="M82 115 C76 122, 70 128, 62 134 C58 137, 56 135, 59 131 C62 127, 70 121, 82 115Z"/>
+
+    <!-- Ray 7 - left -->
+    <path d="M74 97 C67 100, 59 101, 50 99 C45 98, 45 94, 50 93 C55 92, 63 94, 74 97Z"/>
+
+    <!-- Ray 8 - top left -->
+    <path d="M82 80 C76 73, 68 68, 62 60 C59 56, 60 53, 64 56 C68 59, 74 65, 82 80Z"/>
+
+    <!-- Extra small rays -->
+    <!-- Between top and top-right -->
+    <path d="M112 74 C116 67, 122 62, 128 55 C130 52, 132 54, 130 57 C127 61, 121 66, 112 74Z"/>
+
+    <!-- Between bottom-right and bottom -->
+    <path d="M110 122 C114 130, 116 137, 114 146 C113 150, 110 150, 109 147 C108 144, 108 136, 110 122Z"/>
+
+    <!-- Between bottom and bottom-left -->
+    <path d="M90 122 C86 130, 82 137, 76 143 C73 146, 71 144, 73 141 C75 138, 80 131, 90 122Z"/>
+
+    <!-- Between left and top-left -->
+    <path d="M76 84 C69 80, 62 74, 56 66 C54 63, 56 61, 59 63 C62 65, 68 71, 76 84Z"/>
+
+    <!-- Spiral center body (solid circle area) -->
+    <circle cx="103" cy="100" r="16"/>
+
+    <!-- Inner spiral cutout -->
+    <path d="M103 100
+      C103 96, 107 94, 109 97
+      C111 100, 109 104, 106 105
+      C103 106, 100 104, 100 101
+      C100 98, 102 95, 105 95
+      C108 95, 111 97, 111 101"
+      fill="none" stroke="#A8C5CF" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M103 101
+      C103 99, 105 97.5, 106.5 99
+      C108 100.5, 107 103, 105 103.5
+      C103 104, 101 102.5, 101 101"
+      fill="none" stroke="#A8C5CF" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+</svg>

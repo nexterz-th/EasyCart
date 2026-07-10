@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สั่งซื้อสินค้า — EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=16">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+    <div class="nav-links">
+      <a href="/">← กลับหน้าร้าน</a>
+    </div>
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileNav">
+    <a href="/">← กลับหน้าร้าน</a>
+  </div>
+</nav>
+
+<div class="checkout-layout">
+
+  <!-- ซ้าย: ฟอร์ม -->
+  <div>
+    <div class="card">
+      <h2>📦 ข้อมูลการจัดส่ง</h2>
+      <form id="checkoutForm" onsubmit="return false">
+        <div class="form-group">
+          <label>ชื่อ–นามสกุล</label>
+          <input type="text" id="name" placeholder="เช่น สมชาย ใจดี" required>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label>เบอร์โทรศัพท์</label>
+            <input type="tel" id="phone" placeholder="0812345678" required>
+          </div>
+          <div class="form-group">
+            <label>อีเมล</label>
+            <input type="email" id="email" placeholder="email@example.com" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ที่อยู่จัดส่ง</label>
+          <textarea id="address" rows="4"
+            placeholder="บ้านเลขที่ / ซอย / ถนน / แขวง-ตำบล / เขต-อำเภอ / จังหวัด / รหัสไปรษณีย์"
+            required></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- วิธีชำระ -->
+    <div class="card" style="margin-top:20px">
+      <h2>💳 วิธีชำระเงิน</h2>
+      <div class="bank-info">
+        <div class="bank-name" data-theme="bank-name">ธนาคารกสิกรไทย (KBank)</div>
+        <div class="account-num" data-theme="bank-account">xxx-x-xxxxx-x</div>
+        <div class="account-name" data-theme="bank-account-name">ชื่อบัญชี: EasyCart Store</div>
+      </div>
+      <div class="info-box" style="margin-top:0">
+        หลังกดยืนยัน → โอนเงิน → แนบสลิปผ่านลิงก์ที่ได้รับทางอีเมล
+      </div>
+    </div>
+  </div>
+
+  <!-- ขวา: สรุปออเดอร์ -->
+  <div>
+    <div class="card" style="position:sticky;top:88px">
+      <h2>🛒 สรุปคำสั่งซื้อ</h2>
+      <div id="orderSummary"></div>
+
+      <!-- คูปองส่วนลด -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--blue-100)">
+        <div style="font-weight:700;font-size:0.85rem;color:var(--gray-600);margin-bottom:8px">🎟️ โค้ดส่วนลด</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="couponInput" placeholder="ใส่โค้ดคูปอง" style="flex:1;text-transform:uppercase;font-size:0.9rem;font-family:inherit"
+            onkeydown="if(event.key==='Enter')applyCoupon()">
+          <button class="btn btn-outline" onclick="applyCoupon()" id="couponBtn" style="white-space:nowrap;padding:0 16px">ใช้โค้ด</button>
+        </div>
+        <div id="couponResult" style="margin-top:8px;font-size:0.82rem;min-height:1.2em"></div>
+      </div>
+
+      <button class="btn btn-orange btn-block" onclick="submitOrder()" id="submitBtn"
+        style="margin-top:20px;font-size:1rem;padding:15px">
+        ✅ ยืนยันสั่งซื้อ
+      </button>
+      <p style="text-align:center;font-size:0.78rem;color:var(--gray-400);margin-top:10px;line-height:1.5">
+        ระบบจะส่งอีเมลยืนยันพร้อมรายละเอียดการชำระเงินมาให้
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/js/cart.js?v=2"></script>
+<script>
+  let appliedCoupon = null; // { code, discount, discount_type, discount_value }
+
+  function renderSummary() {
+    const cart = getCart();
+    const el = document.getElementById('orderSummary');
+
+    if (!cart.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:32px 0">
+        <div class="icon">🛒</div>
+        <h3>ตะกร้าว่างเปล่า</h3>
+        <a href="/" class="btn btn-primary" style="margin-top:16px">เลือกสินค้า</a>
+      </div>`;
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').style.opacity = '0.4';
+      return;
+    }
+
+    let subtotal = 0;
+    const rows = cart.map(item => {
+      const sub = item.price * item.quantity;
+      subtotal += sub;
+      return `<div class="summary-item">
+        <div>
+          <div style="font-weight:700;color:var(--gray-800)">${item.product_name}</div>
+          <div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px">
+            สี ${item.color_name} · ไซส์ ${item.size_name} · ×${item.quantity}
+          </div>
+        </div>
+        <div style="font-weight:700;white-space:nowrap;margin-left:12px">฿${sub.toLocaleString()}</div>
+      </div>`;
+    }).join('');
+
+    const discount = appliedCoupon ? appliedCoupon.discount : 0;
+    const total = Math.max(0, subtotal - discount);
+    const discountRow = appliedCoupon ? `
+      <div class="summary-item" style="color:#16a34a">
+        <div>ส่วนลดคูปอง <strong>${appliedCoupon.code}</strong></div>
+        <div style="font-weight:700;white-space:nowrap;margin-left:12px">-฿${discount.toLocaleString()}</div>
+      </div>` : '';
+
+    el.innerHTML = rows + discountRow + `
+      <div class="summary-total">
+        <span>ยอดรวมสุทธิ</span>
+        <span>฿${total.toLocaleString()}</span>
+      </div>`;
+  }
+
+  async function applyCoupon() {
+    const code = document.getElementById('couponInput').value.trim();
+    const resultEl = document.getElementById('couponResult');
+    if (!code) { resultEl.innerHTML = '<span style="color:#8B1A1A">กรุณาระบุโค้ด</span>'; return; }
+
+    const cart = getCart();
+    const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+    const btn = document.getElementById('couponBtn');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/coupon/validate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, subtotal })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        appliedCoupon = data;
+        const label = data.discount_type === 'percent'
+          ? `${data.discount_value}%` : `฿${data.discount_value.toLocaleString()}`;
+        resultEl.innerHTML = `<span style="color:#16a34a">✅ ใช้โค้ดสำเร็จ! ลด ${label} = -฿${data.discount.toLocaleString()}</span>`;
+        document.getElementById('couponInput').disabled = true;
+        btn.textContent = 'ยกเลิก';
+        btn.onclick = removeCoupon;
+      } else {
+        appliedCoupon = null;
+        resultEl.innerHTML = `<span style="color:#8B1A1A">❌ ${data.error}</span>`;
+      }
+    } catch(e) {
+      resultEl.innerHTML = '<span style="color:#8B1A1A">เกิดข้อผิดพลาด</span>';
+    }
+    btn.disabled = false;
+    renderSummary();
+  }
+
+  function removeCoupon() {
+    appliedCoupon = null;
+    document.getElementById('couponInput').value = '';
+    document.getElementById('couponInput').disabled = false;
+    document.getElementById('couponResult').innerHTML = '';
+    const btn = document.getElementById('couponBtn');
+    btn.textContent = 'ใช้โค้ด';
+    btn.onclick = applyCoupon;
+    renderSummary();
+  }
+
+  async function submitOrder() {
+    const name    = document.getElementById('name').value.trim();
+    const phone   = document.getElementById('phone').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const address = document.getElementById('address').value.trim();
+
+    if (!name || !phone || !email || !address) {
+      showToast('กรุณากรอกข้อมูลให้ครบทุกช่อง', 'error'); return;
+    }
+    const cart = getCart();
+    if (!cart.length) { showToast('ตะกร้าว่างเปล่า', 'error'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="opacity:.7">กำลังส่งคำสั่งซื้อ…</span>';
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: name, customer_phone: phone,
+          customer_email: email, customer_address: address,
+          coupon_code: appliedCoupon ? appliedCoupon.code : null,
+          items: cart.map(i => ({
+            product_id: i.product_id, color_id: i.color_id,
+            size_id: i.size_id, quantity: i.quantity
+          }))
+        })
+      });
+      const data = await res.json();
+      if (data.order_number) {
+        clearCart();
+        location.href = `/success.html?order=${data.order_number}&total=${data.total}`;
+      } else throw new Error(data.error || 'เกิดข้อผิดพลาด');
+    } catch(e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '✅ ยืนยันสั่งซื้อ';
+    }
+  }
+
+  renderSummary();
+</script>
+</body>
+</html>

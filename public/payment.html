@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แจ้งโอนเงิน — EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=15">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+    <div class="nav-links">
+      <a href="/track.html">🔍 ติดตามออเดอร์</a>
+    </div>
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileNav">
+    <a href="/track.html">🔍 ติดตามออเดอร์</a>
+  </div>
+</nav>
+
+<div class="payment-container">
+
+  <div style="margin-bottom:8px;padding-top:40px">
+    <h1 style="font-size:1.6rem;font-weight:900;color:var(--payment-title-color,var(--blue-800))">แจ้งโอนเงิน</h1>
+    <p style="color:var(--payment-sub-color,var(--gray-400));margin-top:4px;font-size:0.92rem">อัปโหลดสลิปการโอนเพื่อยืนยันคำสั่งซื้อ</p>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+
+    <!-- บัญชีปลายทาง -->
+    <div class="bank-info" style="margin-bottom:28px">
+      <div class="bank-name" data-theme="bank-name">🏦 ธนาคารกสิกรไทย (KBank)</div>
+      <div class="account-num" data-theme="bank-account">xxx-x-xxxxx-x</div>
+      <div class="account-name" data-theme="bank-account-name">ชื่อบัญชี: EasyCart Store</div>
+    </div>
+
+    <div class="form-group">
+      <label>เลขที่ออเดอร์</label>
+      <input type="text" id="orderInput" placeholder="เช่น EC12345678"
+        style="text-transform:uppercase;font-weight:700;letter-spacing:1px">
+    </div>
+
+    <div class="form-group">
+      <label>แนบสลิปการโอน</label>
+      <div class="upload-area" id="uploadArea"
+        onclick="document.getElementById('slipFile').click()">
+        <div class="icon">📎</div>
+        <p style="font-weight:700;color:var(--gray-600);margin-bottom:4px">คลิกหรือลากไฟล์มาวางที่นี่</p>
+        <p style="font-size:0.8rem;color:var(--gray-400)">รองรับ JPG, PNG ขนาดไม่เกิน 5MB</p>
+        <div class="upload-preview" id="uploadPreview" style="display:none;margin-top:16px">
+          <img id="previewImg" src="" alt="slip preview">
+        </div>
+      </div>
+      <input type="file" id="slipFile" accept="image/*" style="display:none" onchange="previewFile(this)">
+    </div>
+
+    <button class="btn btn-orange btn-block" onclick="submitPayment()" id="submitBtn"
+      style="font-size:0.95rem;padding:15px">
+      ✅ ยืนยันการโอนเงิน
+    </button>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/js/cart.js?v=2"></script>
+<script>
+  const p = new URLSearchParams(location.search);
+  if (p.get('order')) document.getElementById('orderInput').value = p.get('order');
+
+  const area = document.getElementById('uploadArea');
+  area.addEventListener('dragover',  e => { e.preventDefault(); area.classList.add('dragover'); });
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop', e => {
+    e.preventDefault(); area.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) previewFile({ files: [file] }, e.dataTransfer.files);
+  });
+
+  function previewFile(input, fileList) {
+    const file = fileList ? fileList[0] : input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('previewImg').src = e.target.result;
+      document.getElementById('uploadPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    if (!fileList) {
+      // normal input
+    } else {
+      // drag-drop: assign to hidden input via DataTransfer (modern browsers)
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('slipFile').files = dt.files;
+      } catch(e) {}
+    }
+  }
+
+  async function submitPayment() {
+    const orderNum = document.getElementById('orderInput').value.trim().toUpperCase();
+    const file     = document.getElementById('slipFile').files[0];
+    if (!orderNum) { showToast('กรุณากรอกเลขออเดอร์', 'error'); return; }
+    if (!file)     { showToast('กรุณาแนบสลิปการโอน',  'error'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="opacity:.6">กำลังส่ง…</span>';
+
+    const form = new FormData();
+    form.append('slip', file);
+
+    try {
+      const res  = await fetch('/api/orders/' + orderNum + '/payment', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.success) {
+        document.querySelector('.payment-container').innerHTML = `
+          <div class="card" style="text-align:center;padding:56px 40px;margin-top:40px">
+            <div style="font-size:4.5rem;margin-bottom:16px">✅</div>
+            <h2 style="font-size:1.5rem;font-weight:900;color:var(--blue-800);margin-bottom:8px">แจ้งโอนเงินสำเร็จ!</h2>
+            <p style="color:var(--gray-400);margin-bottom:32px;font-size:0.92rem">
+              ร้านค้าจะตรวจสอบและยืนยันออเดอร์ภายใน 1–2 ชั่วโมง
+            </p>
+            <a href="/track.html?q=${orderNum}" class="btn btn-primary" style="font-size:0.95rem;padding:13px 28px">
+              🔍 ติดตามสถานะออเดอร์
+            </a>
+          </div>`;
+      } else throw new Error(data.error || 'เกิดข้อผิดพลาด');
+    } catch(e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '✅ ยืนยันการโอนเงิน';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EasyCart — ร้านเสื้อยืดน่ารัก</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="/css/style.css?v=16">
+  <script src="/js/theme.js?v=15"></script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo">🛒 EasyCart</a>
+    <div class="nav-links">
+      <a href="/track.html">🔍 ติดตามออเดอร์</a>
+      <a href="#" class="cart-btn" onclick="toggleCart(event)">
+        🛒 ตะกร้า <span class="cart-count" id="cartCount">0</span>
+      </a>
+    </div>
+    <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="เมนู">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="mobileNav">
+    <a href="/track.html">🔍 ติดตามออเดอร์</a>
+    <a href="#" class="cart-btn" onclick="toggleCart(event)">🛒 ตะกร้า</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1 id="heroTitle">เสื้อยืดน่ารัก สีสวย 🎨</h1>
+    <p id="heroSubtitle">เลือกสีที่ชอบ เลือกไซส์ที่ใช่ ส่งตรงถึงบ้าน</p>
+    <div class="hero-badges" id="heroBadges">
+      <span class="badge">✦ Cotton 100%</span>
+      <span class="badge">🚚 ส่งทั่วไทย</span>
+      <span class="badge">✦ หลากสีให้เลือก</span>
+      <span class="badge">🌟 คุณภาพดี ราคาเป็นมิตร</span>
+    </div>
+  </div>
+</section>
+
+<!-- Banner Slider -->
+<section class="banner-section" id="bannerSection" style="display:none">
+  <div class="banner-slider" id="bannerSlider">
+    <div class="banner-track" id="bannerTrack"></div>
+    <button class="banner-arrow banner-prev" id="bannerPrev" onclick="slideBanner(-1)">&#8249;</button>
+    <button class="banner-arrow banner-next" id="bannerNext" onclick="slideBanner(1)">&#8250;</button>
+    <div class="banner-dots" id="bannerDots"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">สินค้าทั้งหมด</h2>
+    <p class="section-sub">เสื้อยืดคุณภาพดี หลากหลายสีให้เลือก</p>
+    <div id="productsGrid" class="products-grid">
+      <div class="loader"><div class="spinner"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Cart Overlay -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart(event)"></div>
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h3>🛒 ตะกร้าสินค้า</h3>
+    <button class="cart-close" onclick="toggleCart(event)">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span>ยอดรวม</span>
+      <span id="cartTotal">฿0</span>
+    </div>
+    <a href="/checkout.html" class="btn btn-orange btn-block">สั่งซื้อเลย →</a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <a href="/" class="logo">🛒 EasyCart</a>
+      <p id="footerDesc">ร้านเสื้อยืดน่ารัก คุณภาพดี ราคาเป็นมิตร จัดส่งทั่วประเทศไทย</p>
+    </div>
+    <div class="footer-links">
+      <h4>เมนู</h4>
+      <ul>
+        <li><a href="/">หน้าแรก</a></li>
+        <li><a href="/track.html">ติดตามออเดอร์</a></li>
+        <li><a href="/payment.html">แจ้งโอนเงิน</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>ติดต่อ</h4>
+      <ul>
+        <li><a href="#" data-theme="line">Line: @easycart</a></li>
+        <li><a href="#" data-theme="fb">Facebook: EasyCart</a></li>
+        <li><a href="#" data-theme="email">Email: shop@easycart.com</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom" id="footerCopy">© 2024 EasyCart T-Shirt Store — All rights reserved</div>
+</footer>
+
+<!-- Popup Banner -->
+<div id="popupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box" onclick="closePopup(event)">
+  <div style="position:relative;max-width:480px;width:100%">
+    <button onclick="closePopup(null)" style="position:absolute;top:-14px;right:-14px;width:36px;height:36px;border-radius:50%;background:white;border:none;font-size:1.2rem;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.2);z-index:1;line-height:1;display:flex;align-items:center;justify-content:center">✕</button>
+    <a id="popupLink" href="#" onclick="return handlePopupClick(event)">
+      <img id="popupImg" src="" alt="โปรโมชั่น" style="width:100%;border-radius:16px;display:block;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    </a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/cart.js?v=2"></script>
+<script src="/js/main.js"></script>
+<script>
+(function(){
+  let banners = [], current = 0, timer = null;
+
+  async function loadBanners() {
+    try {
+      const res = await fetch('/api/banners');
+      banners = await res.json();
+    } catch(e) { banners = []; }
+    if (!banners.length) return;
+    const section = document.getElementById('bannerSection');
+    const track   = document.getElementById('bannerTrack');
+    const dots    = document.getElementById('bannerDots');
+    section.style.display = '';
+    track.innerHTML = banners.map(b => `
+      <div class="banner-slide">
+        ${b.image_path ? `<img src="${b.image_path}" alt="${b.title||''}">` : ''}
+        <div class="banner-slide-content">
+          ${b.title    ? `<h2>${b.title}</h2>` : ''}
+          ${b.subtitle ? `<p>${b.subtitle}</p>` : ''}
+          ${b.button_text && b.button_link ? `<a class="banner-btn" href="${b.button_link}">${b.button_text}</a>` : ''}
+        </div>
+      </div>`).join('');
+    dots.innerHTML = banners.map((_,i) => `<button class="banner-dot${i===0?' active':''}" onclick="goToBanner(${i})"></button>`).join('');
+    if (banners.length > 1) startTimer();
+    if (banners.length < 2) {
+      document.getElementById('bannerPrev').style.display='none';
+      document.getElementById('bannerNext').style.display='none';
+    }
+  }
+
+  function goTo(n) {
+    current = (n + banners.length) % banners.length;
+    document.getElementById('bannerTrack').style.transform = `translateX(-${current*100}%)`;
+    document.querySelectorAll('.banner-dot').forEach((d,i) => d.classList.toggle('active', i===current));
+  }
+
+  function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(() => goTo(current+1), 4500);
+  }
+
+  window.slideBanner = function(dir) { goTo(current+dir); if(banners.length>1) startTimer(); };
+  window.goToBanner  = function(n)   { goTo(n);           if(banners.length>1) startTimer(); };
+
+  loadBanners();
+})();
+
+// ===== POPUP BANNER =====
+(async function() {
+  if (sessionStorage.getItem('popupSeen')) return;
+  try {
+    const t = await fetch('/api/theme').then(r => r.json());
+    if (t.popup_enabled !== '1' || !t.popup_image) return;
+    const overlay = document.getElementById('popupOverlay');
+    document.getElementById('popupImg').src = t.popup_image;
+    const link = t.popup_link ? t.popup_link.trim() : '';
+    document.getElementById('popupLink').href = link || '#';
+    overlay.style.display = 'flex';
+    sessionStorage.setItem('popupSeen', '1');
+  } catch(e) {}
+})();
+function closePopup(e) {
+  if (e && e.target !== document.getElementById('popupOverlay')) return;
+  document.getElementById('popupOverlay').style.display = 'none';
+}
+function handlePopupClick(e) {
+  const href = document.getElementById('popupLink').href;
+  if (!href || href.endsWith('#')) { e.preventDefault(); closePopup(null); return false; }
+  document.getElementById('popupOverlay').style.display = 'none';
+}
+</script>
+</body>
+</html>

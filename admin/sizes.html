@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการไซส์ - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo">🌟 EasyCart</div><p>ระบบจัดการร้านค้า</p></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item active" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>📐 จัดการไซส์</h1>
+      <button class="btn btn-primary" onclick="openModal('addModal')">+ เพิ่มไซส์ใหม่</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+      <div class="table-wrap">
+        <div class="table-header"><h3>รายการไซส์ทั้งหมด</h3></div>
+        <table>
+          <thead>
+            <tr><th>ลำดับ</th><th>ชื่อไซส์</th><th>จัดการ</th></tr>
+          </thead>
+          <tbody id="sizesTable">
+            <tr><td colspan="3" style="text-align:center;padding:32px;color:var(--text-light)">กำลังโหลด...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap" style="padding:24px">
+        <h3 style="margin-bottom:16px">💡 วิธีใช้งาน</h3>
+        <ul style="line-height:2;color:var(--text-light);font-size:0.9rem;padding-left:20px">
+          <li>ไซส์ที่เพิ่มที่นี่จะถูกเพิ่มในสินค้าทุกชิ้นอัตโนมัติ</li>
+          <li>ลบไซส์จะลบออกจากสินค้าทั้งหมดด้วย</li>
+          <li>ตั้งค่าสต็อกต่อไซส์ได้ที่หน้า <a href="/admin/products.html" style="color:var(--primary-dark)">จัดการสินค้า</a></li>
+          <li>เรียงลำดับโดยตัวเลข (น้อย = แสดงก่อน)</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Add Size -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" style="max-width:380px">
+    <h3>เพิ่มไซส์ใหม่</h3>
+    <div class="form-group"><label>ชื่อไซส์ *</label><input type="text" id="sizeName" placeholder="เช่น 4XL, XXS"></div>
+    <div class="form-group"><label>ลำดับ (น้อย = แสดงก่อน)</label><input type="number" id="sizeOrder" value="99"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('addModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="addSize()">เพิ่ม</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Size -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal" style="max-width:380px">
+    <h3>แก้ไขไซส์</h3>
+    <input type="hidden" id="editSizeId">
+    <div class="form-group"><label>ชื่อไซส์ *</label><input type="text" id="editSizeName"></div>
+    <div class="form-group"><label>ลำดับ</label><input type="number" id="editSizeOrder"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('editModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveSize()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/admin/admin.js"></script>
+<script>
+  let sizes = [];
+
+  async function loadSizes() {
+    const res = await adminFetch('/api/admin/sizes');
+    sizes = await res.json();
+    renderSizes();
+  }
+
+  function renderSizes() {
+    const tbody = document.getElementById('sizesTable');
+    if (!sizes.length) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:32px;color:var(--text-light)">ยังไม่มีไซส์</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = sizes.map(s => `
+      <tr>
+        <td style="color:var(--text-light);font-size:0.85rem">${s.sort_order}</td>
+        <td><strong style="font-size:1.1rem">${s.name}</strong></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="openEdit(${s.id})">✏️ แก้ไข</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSize(${s.id},'${s.name}')">🗑️ ลบ</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function addSize() {
+    const name = document.getElementById('sizeName').value.trim();
+    const order = parseInt(document.getElementById('sizeOrder').value) || 99;
+    if (!name) { showToast('กรุณากรอกชื่อไซส์', 'error'); return; }
+    await adminFetch('/api/admin/sizes', { method: 'POST', body: JSON.stringify({ name, sort_order: order }) });
+    showToast('เพิ่มไซส์แล้ว ✅', 'success');
+    document.getElementById('sizeName').value = '';
+    closeModal('addModal');
+    loadSizes();
+  }
+
+  function openEdit(id) {
+    const s = sizes.find(x => x.id === id);
+    document.getElementById('editSizeId').value = id;
+    document.getElementById('editSizeName').value = s.name;
+    document.getElementById('editSizeOrder').value = s.sort_order;
+    openModal('editModal');
+  }
+
+  async function saveSize() {
+    const id = document.getElementById('editSizeId').value;
+    const name = document.getElementById('editSizeName').value.trim();
+    const order = parseInt(document.getElementById('editSizeOrder').value) || 99;
+    if (!name) { showToast('กรุณากรอกชื่อไซส์', 'error'); return; }
+    await adminFetch('/api/admin/sizes/' + id, { method: 'PUT', body: JSON.stringify({ name, sort_order: order }) });
+    showToast('อัปเดตไซส์แล้ว ✅', 'success');
+    closeModal('editModal');
+    loadSizes();
+  }
+
+  async function deleteSize(id, name) {
+    if (!confirm(`ลบไซส์ "${name}"? จะถูกลบออกจากสินค้าทั้งหมด`)) return;
+    await adminFetch('/api/admin/sizes/' + id, { method: 'DELETE' });
+    showToast('ลบไซส์แล้ว', 'success');
+    loadSizes();
+  }
+
+  loadSizes();
+</script>
+</body>
+</html>

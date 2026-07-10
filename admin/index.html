@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - EasyCart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans Thai', sans-serif;
+      background: #F5F8FF;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+    .login-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 400px;
+      box-shadow: 0 8px 40px rgba(37,99,235,0.12);
+      border: 1px solid #DBEAFE;
+      text-align: center;
+    }
+    .logo {
+      font-size: 1.6rem; font-weight: 900; color: #0369A1;
+      margin-bottom: 6px; display: flex; align-items: center;
+      justify-content: center; gap: 10px;
+    }
+    h2 { font-size: 0.9rem; color: #94A3C8; margin-bottom: 36px; font-weight: 500; }
+    .form-group { margin-bottom: 18px; text-align: left; }
+    label { display: block; font-weight: 700; margin-bottom: 7px; font-size: 0.82rem; color: #4A5C88; letter-spacing: 0.2px; }
+    input {
+      width: 100%; padding: 13px 16px;
+      border: 1.5px solid #E2E8F8; border-radius: 12px;
+      font-size: 0.95rem; transition: all 0.18s;
+      background: #F8FAFF; color: #1E2A50;
+      font-family: 'Noto Sans Thai', sans-serif;
+    }
+    input:focus { outline: none; border-color: #38BDF8; box-shadow: 0 0 0 3px rgba(56,189,248,0.15); background: #fff; }
+    .btn {
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      background: #0284C7; color: white; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; margin-top: 8px; transition: all 0.2s;
+      font-family: 'Noto Sans Thai', sans-serif;
+      box-shadow: 0 4px 14px rgba(2,132,199,0.3);
+    }
+    .btn:hover { background: #0369A1; transform: translateY(-1px); box-shadow: 0 8px 22px rgba(2,132,199,0.4); }
+    .error { color: #8B1A1A; font-size: 0.85rem; margin-top: 12px; background: #FEF0F0; padding: 10px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="logo">🌟 EasyCart</div>
+    <h2>ระบบจัดการร้านค้า</h2>
+    <div class="form-group">
+      <label>รหัสผ่าน Admin</label>
+      <input type="password" id="pass" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn" onclick="login()">เข้าสู่ระบบ</button>
+    <div class="error" id="err"></div>
+  </div>
+  <script>
+    if (sessionStorage.getItem('adminKey')) location.href = '/admin/dashboard.html';
+    async function login() {
+      const pass = document.getElementById('pass').value;
+      const res = await fetch('/api/admin/verify', { headers: { 'x-admin-key': pass } });
+      if (res.ok) { sessionStorage.setItem('adminKey', pass); location.href = '/admin/dashboard.html'; }
+      else document.getElementById('err').textContent = 'รหัสผ่านไม่ถูกต้อง';
+    }
+  </script>
+</body>
+</html>

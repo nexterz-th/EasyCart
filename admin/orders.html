@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการออเดอร์ - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo">🌟 EasyCart</div><p>ระบบจัดการร้านค้า</p></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item active" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>📦 จัดการออเดอร์</h1>
+    </div>
+
+    <!-- Filter Bar -->
+    <div style="background:white;border-radius:14px;padding:16px 20px;margin-bottom:20px;box-shadow:0 4px 20px rgba(79,195,247,0.1);display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <input class="search-input" type="text" id="searchInput" placeholder="🔍 ค้นหาออเดอร์/ชื่อ/เบอร์" oninput="loadOrders()">
+      <select class="select-status" id="statusFilter" onchange="loadOrders()">
+        <option value="">ทุกสถานะ</option>
+        <option value="pending">⏳ รอชำระ</option>
+        <option value="paid">💰 รอยืนยัน</option>
+        <option value="confirmed">✅ ยืนยันแล้ว</option>
+        <option value="shipped">🚚 จัดส่งแล้ว</option>
+        <option value="delivered">📦 รับแล้ว</option>
+        <option value="cancelled">❌ ยกเลิก</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="loadOrders()">🔄 รีเฟรช</button>
+      <span id="orderCount" style="color:var(--text-light);font-size:0.85rem;margin-left:auto"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>เลขออเดอร์</th>
+            <th>ลูกค้า</th>
+            <th>สินค้า</th>
+            <th>ยอด</th>
+            <th>สถานะ</th>
+            <th>วันที่</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-light)">กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Order Detail -->
+<div class="modal-overlay" id="orderDetailModal">
+  <div class="modal" style="max-width:640px">
+    <h3>📋 รายละเอียดออเดอร์</h3>
+    <div id="orderDetailContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('orderDetailModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Update Status -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal" style="max-width:440px">
+    <h3>🔄 อัปเดตสถานะ</h3>
+    <div style="margin-bottom:6px;font-weight:600;color:var(--text-light)" id="statusOrderNum"></div>
+    <div class="form-group">
+      <label>สถานะใหม่</label>
+      <select id="newStatus">
+        <option value="pending">⏳ รอชำระเงิน</option>
+        <option value="paid">💰 รอยืนยัน</option>
+        <option value="confirmed">✅ ยืนยันการชำระเงิน</option>
+        <option value="shipped">🚚 จัดส่งแล้ว</option>
+        <option value="delivered">📦 ลูกค้ารับแล้ว</option>
+        <option value="cancelled">❌ ยกเลิก</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>หมายเหตุ (ถ้ามี)</label>
+      <textarea id="statusNotes" rows="2" placeholder="เช่น เลขพัสดุ, หมายเหตุ..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('statusModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="submitStatus()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/admin/admin.js"></script>
+<script>
+  let orders = [];
+  let currentOrderId = null;
+
+  async function loadOrders() {
+    const q = document.getElementById('searchInput').value.trim();
+    const status = document.getElementById('statusFilter').value;
+    let url = '/api/admin/orders?';
+    if (q) url += 'q=' + encodeURIComponent(q) + '&';
+    if (status) url += 'status=' + status;
+
+    const res = await adminFetch(url);
+    orders = await res.json();
+    document.getElementById('orderCount').textContent = `พบ ${orders.length} ออเดอร์`;
+    renderOrders();
+  }
+
+  function renderOrders() {
+    const tbody = document.getElementById('ordersTable');
+    if (!orders.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-light)">ไม่พบออเดอร์</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = orders.map(o => {
+      const itemsSummary = o.items?.map(i => `${i.product_name} (${i.color_name}/${i.size_name}×${i.quantity})`).join(', ') || '-';
+      return `
+        <tr>
+          <td><strong style="color:var(--primary-dark)">${o.order_number}</strong></td>
+          <td>
+            <div style="font-weight:600">${o.customer_name}</div>
+            <div style="font-size:0.8rem;color:var(--text-light)">${o.customer_phone}</div>
+          </td>
+          <td style="font-size:0.82rem;max-width:200px;color:var(--text-light)">${itemsSummary}</td>
+          <td style="font-weight:800;color:var(--orange)">฿${o.total_amount.toLocaleString()}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td style="font-size:0.82rem;color:var(--text-light)">${new Date(o.created_at).toLocaleDateString('th-TH')}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="viewOrder(${o.id})">👁️ ดู</button>
+              <button class="btn btn-primary btn-sm" onclick="openStatusModal(${o.id})">🔄</button>
+              ${o.payment_slip ? `<a href="${o.payment_slip}" target="_blank" class="btn btn-success btn-sm">🧾</a>` : ''}
+              <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id},'${o.order_number}')">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function viewOrder(id) {
+    const o = orders.find(x => x.id === id);
+    const itemsHtml = o.items?.map(i => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.9rem">
+        <span>${i.product_name} <span style="color:var(--text-light)">(${i.color_name}, ${i.size_name}) ×${i.quantity}</span></span>
+        <span style="font-weight:700">฿${(i.price*i.quantity).toLocaleString()}</span>
+      </div>`).join('') || '';
+
+    document.getElementById('orderDetailContent').innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:0.85rem;color:var(--text-light)">เลขออเดอร์</div>
+          <div style="font-size:1.4rem;font-weight:900;color:var(--primary-dark)">${o.order_number}</div>
+        </div>
+        ${statusBadge(o.status)}
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.9rem">
+        <div><span style="color:var(--text-light)">ชื่อ:</span> <strong>${o.customer_name}</strong></div>
+        <div><span style="color:var(--text-light)">เบอร์:</span> <strong>${o.customer_phone}</strong></div>
+        <div><span style="color:var(--text-light)">อีเมล:</span> ${o.customer_email}</div>
+        <div><span style="color:var(--text-light)">วันสั่ง:</span> ${new Date(o.created_at).toLocaleDateString('th-TH')}</div>
+        <div style="grid-column:1/-1"><span style="color:var(--text-light)">ที่อยู่:</span> ${o.customer_address}</div>
+      </div>
+      <div>${itemsHtml}</div>
+      <div style="display:flex;justify-content:space-between;padding:14px 0;font-weight:800;font-size:1.1rem;border-top:2px solid var(--border);margin-top:8px">
+        <span>ยอดรวม</span><span style="color:var(--orange)">฿${o.total_amount.toLocaleString()}</span>
+      </div>
+      ${o.payment_slip ? `<div style="margin-top:12px"><p style="font-weight:700;margin-bottom:8px">🧾 สลิปการโอน:</p><img src="${o.payment_slip}" style="max-width:100%;border-radius:12px"></div>` : ''}
+      ${o.notes ? `<div style="margin-top:12px;padding:12px;background:#E8F5E9;border-radius:10px">📝 ${o.notes}</div>` : ''}
+      <div style="margin-top:16px">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('orderDetailModal');openStatusModal(${o.id})">🔄 อัปเดตสถานะ</button>
+      </div>
+    `;
+    openModal('orderDetailModal');
+  }
+
+  function openStatusModal(id) {
+    currentOrderId = id;
+    const o = orders.find(x => x.id === id);
+    document.getElementById('statusOrderNum').textContent = 'ออเดอร์: ' + o.order_number;
+    document.getElementById('newStatus').value = o.status;
+    document.getElementById('statusNotes').value = o.notes || '';
+    openModal('statusModal');
+  }
+
+  async function submitStatus() {
+    const status = document.getElementById('newStatus').value;
+    const notes = document.getElementById('statusNotes').value.trim();
+    await adminFetch('/api/admin/orders/' + currentOrderId + '/status', {
+      method: 'PUT', body: JSON.stringify({ status, notes })
+    });
+    showToast('อัปเดตสถานะแล้ว ✅', 'success');
+    closeModal('statusModal');
+    loadOrders();
+  }
+
+  async function deleteOrder(id, orderNumber) {
+    if (!confirm(`ลบออเดอร์ ${orderNumber} ?\nการลบจะไม่สามารถกู้คืนได้`)) return;
+    await adminFetch('/api/admin/orders/' + id, { method: 'DELETE' });
+    showToast('ลบออเดอร์แล้ว', 'success');
+    loadOrders();
+  }
+
+  loadOrders();
+</script>
+</body>
+</html>

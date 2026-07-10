@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการสินค้า - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo">🌟 EasyCart</div><p>ระบบจัดการร้านค้า</p></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item active" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>👕 จัดการสินค้า</h1>
+      <button class="btn btn-primary" onclick="openAddProduct()">+ เพิ่มสินค้าใหม่</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>รายการสินค้า</h3>
+      </div>
+      <div id="productList" style="padding:16px">
+        <div style="text-align:center;padding:40px;color:var(--text-light)">กำลังโหลด...</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: Add/Edit Product -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <h3 id="productModalTitle">เพิ่มสินค้าใหม่</h3>
+    <input type="hidden" id="editProductId">
+    <div class="form-group"><label>ชื่อสินค้า *</label><input type="text" id="pName" placeholder="ชื่อสินค้า"></div>
+    <div class="form-group"><label>ราคา (บาท) *</label><input type="number" id="pPrice" placeholder="0"></div>
+    <div class="form-group"><label>รายละเอียด</label><textarea id="pDesc" rows="3" placeholder="รายละเอียดสินค้า"></textarea></div>
+    <div class="form-group"><label>หมวดหมู่</label><input type="text" id="pCat" value="เสื้อยืด"></div>
+    <div class="form-group" id="pActiveGroup" style="display:none">
+      <label>สถานะ</label>
+      <select id="pActive"><option value="1">แสดงสินค้า</option><option value="0">ซ่อนสินค้า</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('productModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveProduct()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Manage Colors -->
+<div class="modal-overlay" id="colorModal">
+  <div class="modal" style="max-width:680px">
+    <h3>🎨 จัดการสี — <span id="colorModalProductName"></span></h3>
+    <div id="colorList" style="margin-bottom:20px"></div>
+    <div style="border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--bg)">
+      <p style="font-weight:700;margin-bottom:12px">➕ เพิ่มสีใหม่</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0"><label>ชื่อสี</label><input type="text" id="newColorName" placeholder="เช่น ฟ้าอ่อน"></div>
+        <div class="form-group" style="margin:0"><label>รหัสสี</label><input type="color" id="newColorHex" value="#4FC3F7" style="width:60px;height:40px;border-radius:8px;cursor:pointer;border:2px solid var(--border)"></div>
+        <button class="btn btn-primary btn-sm" onclick="addColor()" style="margin-bottom:2px">เพิ่มสี</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('colorModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Upload Images for Color -->
+<div class="modal-overlay" id="imageModal">
+  <div class="modal">
+    <h3>📸 รูปสินค้า — <span id="imgModalColorName"></span></h3>
+    <div class="img-grid" id="existingImages"></div>
+    <div class="upload-zone" style="margin-top:16px" onclick="document.getElementById('imgUpload').click()">
+      <div style="font-size:2rem;margin-bottom:8px">📤</div>
+      <p style="font-weight:700">คลิกเพื่ออัปโหลดรูปภาพ</p>
+      <p style="font-size:0.8rem;color:var(--text-light)">PNG, JPG ได้หลายรูป ขนาดไม่เกิน 5MB ต่อรูป</p>
+    </div>
+    <input type="file" id="imgUpload" multiple accept="image/*" style="display:none" onchange="uploadImages(this)">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('imageModal');loadProducts()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Sizes/Stock per Color -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal" style="max-width:860px">
+    <h3>📐 รายการตัวเลือกสินค้า — <span id="stockModalName"></span></h3>
+
+    <!-- Bulk update bar -->
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:14px 16px;background:var(--bg);border-radius:12px;margin-bottom:16px;border:1px solid var(--border)">
+      <span style="font-weight:700;font-size:0.85rem;color:var(--text-light);white-space:nowrap;align-self:center">รายการตัวเลือกสินค้า</span>
+      <div style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;border:1.5px solid var(--border);border-radius:8px;padding:0 10px;background:#fff;min-width:120px">
+          <span style="color:var(--text-light);font-size:0.9rem">฿</span>
+          <input type="number" id="bulkPrice" placeholder="ราคา" min="0" style="border:none;outline:none;padding:8px 4px;font-size:0.9rem;width:80px">
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;border:1.5px solid var(--border);border-radius:8px;padding:0 10px;background:#fff;min-width:100px">
+          <input type="number" id="bulkStock" placeholder="คลัง" min="0" style="border:none;outline:none;padding:8px 4px;font-size:0.9rem;width:70px">
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;border:1.5px solid var(--border);border-radius:8px;padding:0 10px;background:#fff;min-width:120px">
+          <input type="text" id="bulkSku" placeholder="เลข SKU" style="border:none;outline:none;padding:8px 4px;font-size:0.9rem;width:90px">
+        </div>
+        <button class="btn btn-accent btn-sm" onclick="bulkUpdateStock()" style="white-space:nowrap">อัพเดตกับสินค้าทั้งหมด</button>
+      </div>
+    </div>
+
+    <!-- Table header -->
+    <div style="overflow-x:auto">
+      <table id="stockTable" style="width:100%;border-collapse:collapse;font-size:0.88rem">
+        <thead>
+          <tr style="background:var(--bg);color:var(--text-light);font-size:0.78rem;text-transform:uppercase">
+            <th style="padding:10px 12px;text-align:left;min-width:130px">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;margin-right:6px"></span>สี
+            </th>
+            <th style="padding:10px 12px;text-align:center;min-width:80px">ไซส์</th>
+            <th style="padding:10px 12px;text-align:center;min-width:140px"><span style="color:#f87171">*</span> ราคา</th>
+            <th style="padding:10px 12px;text-align:center;min-width:120px"><span style="color:#f87171">*</span> คลัง</th>
+            <th style="padding:10px 12px;text-align:center;min-width:130px">เลข SKU</th>
+            <th style="padding:10px 12px;min-width:60px"></th>
+          </tr>
+        </thead>
+        <tbody id="stockList"></tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('stockModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Product Gallery Slideshow -->
+<div class="modal-overlay" id="galleryModal">
+  <div class="modal" style="max-width:700px">
+    <h3>🖼️ Gallery Slideshow — <span id="galleryModalName"></span></h3>
+
+    <!-- Toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:12px;border:1.5px solid var(--border);margin-bottom:16px">
+      <div>
+        <div style="font-weight:700;font-size:0.9rem">แสดง Slideshow ในหน้าสินค้า</div>
+        <div style="font-size:0.78rem;color:var(--text-light);margin-top:2px">ปิดเพื่อซ่อน slideshow แม้มีรูปอยู่</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;cursor:pointer">
+        <input type="checkbox" id="galleryToggle" onchange="saveGalleryToggle()" style="opacity:0;width:0;height:0;position:absolute">
+        <span id="galleryToggleTrack" style="position:absolute;inset:0;border-radius:26px;background:#ccc;cursor:pointer;transition:.2s">
+          <span id="galleryToggleThumb" style="position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;left:3px;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span>
+        </span>
+      </label>
+    </div>
+
+    <!-- Existing images -->
+    <div id="galleryImgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:16px"></div>
+
+    <!-- Upload zone -->
+    <div class="upload-zone" onclick="document.getElementById('galleryImgInput').click()" style="cursor:pointer">
+      <div style="font-size:2rem;margin-bottom:6px">📤</div>
+      <p style="font-weight:700;margin:0">คลิกเพื่ออัปโหลดรูป Slideshow</p>
+      <p style="font-size:0.78rem;color:var(--text-light);margin:4px 0 0">PNG, JPG ได้หลายรูป ขนาดไม่เกิน 5MB ต่อรูป</p>
+    </div>
+    <input type="file" id="galleryImgInput" multiple accept="image/*" style="display:none" onchange="uploadGalleryImgs(this)">
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('galleryModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let products = [];
+  let currentProductId = null;
+  let currentColorId = null;
+
+  async function loadProducts() {
+    const res = await adminFetch('/api/admin/products');
+    products = await res.json();
+    renderProducts();
+  }
+
+  function renderProducts() {
+    const container = document.getElementById('productList');
+    if (!products.length) {
+      container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-light)">ยังไม่มีสินค้า กดปุ่มด้านบนเพื่อเพิ่ม</div>`;
+      return;
+    }
+
+    container.innerHTML = products.map(p => {
+      const coverImg = p.cover_image || p.colors?.[0]?.images?.[0]?.image_path;
+      const colorDots = p.colors?.map(c => `<span title="${c.name}" style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${c.hex_code};border:2px solid white;box-shadow:0 0 0 1px #ddd;margin-right:4px"></span>`).join('') || '';
+
+      return `
+      <div style="border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+        <div style="position:relative;width:80px;height:80px;border-radius:12px;overflow:hidden;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:2rem;cursor:pointer" onclick="document.getElementById('coverInput_${p.id}').click()" title="คลิกเพื่อเปลี่ยนภาพปก">
+          ${coverImg ? `<img src="${coverImg}" style="width:100%;height:100%;object-fit:cover">` : '👕'}
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='rgba(0,0,0,0.35)';this.querySelector('span').style.opacity=1" onmouseout="this.style.background='rgba(0,0,0,0)';this.querySelector('span').style.opacity=0">
+            <span style="opacity:0;color:white;font-size:1.4rem;transition:opacity .2s">📸</span>
+          </div>
+          <input type="file" id="coverInput_${p.id}" accept="image/*" style="display:none" onchange="uploadCover(${p.id},this)">
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <strong style="font-size:1.05rem">${p.name}</strong>
+            <span style="font-size:0.8rem;padding:3px 10px;border-radius:20px;background:${p.is_active ? '#E8F5E9' : '#FFEBEE'};color:${p.is_active ? '#2E7D32' : '#B71C1C'}">${p.is_active ? 'แสดงอยู่' : 'ซ่อน'}</span>
+            ${p.cover_image ? '<span style="font-size:0.75rem;padding:2px 8px;border-radius:20px;background:#EFF6FF;color:#0284C7">📸 มีภาพปก</span>' : ''}
+          </div>
+          <div style="color:var(--brown-600);font-weight:800;font-size:1.1rem;margin-bottom:6px">฿${p.price.toLocaleString()}</div>
+          <div style="margin-bottom:8px">${colorDots}</div>
+          <div style="font-size:0.8rem;color:var(--gray-400)">${p.colors?.length || 0} สี | ${p.sizes?.length || 0} ไซส์</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="openEditProduct(${p.id})">✏️ แก้ไข</button>
+          <button class="btn btn-primary btn-sm" onclick="openColorModal(${p.id})">🎨 จัดการสี</button>
+          <button class="btn btn-success btn-sm" onclick="openStockModal(${p.id})">📐 สต็อก/ไซส์</button>
+          <button class="btn btn-sm" onclick="openGalleryModal(${p.id})" style="border:1.5px solid #7c3aed;color:#7c3aed;background:white">🖼️ Slideshow</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('coverInput_${p.id}').click()" style="border-color:var(--blue-400);color:var(--blue-600)">📸 ภาพปก</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleActive(${p.id})" style="border-color:var(--gray-400);color:var(--gray-600)">${p.is_active ? '🙈 ซ่อน' : '👁️ แสดง'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑️ ลบ</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function openAddProduct() {
+    document.getElementById('productModalTitle').textContent = 'เพิ่มสินค้าใหม่';
+    document.getElementById('editProductId').value = '';
+    document.getElementById('pName').value = '';
+    document.getElementById('pPrice').value = '';
+    document.getElementById('pDesc').value = '';
+    document.getElementById('pCat').value = 'เสื้อยืด';
+    document.getElementById('pActiveGroup').style.display = 'none';
+    openModal('productModal');
+  }
+
+  function openEditProduct(id) {
+    const p = products.find(x => x.id === id);
+    document.getElementById('productModalTitle').textContent = 'แก้ไขสินค้า';
+    document.getElementById('editProductId').value = id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pDesc').value = p.description || '';
+    document.getElementById('pCat').value = p.category;
+    document.getElementById('pActive').value = p.is_active;
+    document.getElementById('pActiveGroup').style.display = 'block';
+    openModal('productModal');
+  }
+
+  async function saveProduct() {
+    const id = document.getElementById('editProductId').value;
+    const body = {
+      name: document.getElementById('pName').value.trim(),
+      price: parseFloat(document.getElementById('pPrice').value),
+      description: document.getElementById('pDesc').value.trim(),
+      category: document.getElementById('pCat').value.trim(),
+      is_active: document.getElementById('pActive').value,
+    };
+    if (!body.name || !body.price) { showToast('กรุณากรอกชื่อและราคา', 'error'); return; }
+
+    if (id) {
+      await adminFetch('/api/admin/products/' + id, { method: 'PUT', body: JSON.stringify(body) });
+      showToast('อัปเดตสินค้าแล้ว ✅', 'success');
+    } else {
+      await adminFetch('/api/admin/products', { method: 'POST', body: JSON.stringify(body) });
+      showToast('เพิ่มสินค้าแล้ว ✅', 'success');
+    }
+    closeModal('productModal');
+    loadProducts();
+  }
+
+  async function toggleActive(id) {
+    const p = products.find(x => x.id === id);
+    if (!confirm(`${p.is_active ? 'ซ่อน' : 'แสดง'}สินค้า "${p.name}"?`)) return;
+    await adminFetch('/api/admin/products/' + id, { method: 'PUT', body: JSON.stringify({ ...p, is_active: p.is_active ? 0 : 1 }) });
+    showToast(p.is_active ? 'ซ่อนสินค้าแล้ว' : 'แสดงสินค้าแล้ว', 'success');
+    loadProducts();
+  }
+
+  async function deleteProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!confirm(`ลบสินค้า "${p.name}" ?\nรูปภาพและข้อมูลทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้`)) return;
+    await adminFetch('/api/admin/products/' + id, { method: 'DELETE' });
+    showToast('ลบสินค้าแล้ว', 'success');
+    loadProducts();
+  }
+
+  // ===== COLOR MANAGEMENT =====
+  function openColorModal(productId) {
+    currentProductId = productId;
+    const p = products.find(x => x.id === productId);
+    document.getElementById('colorModalProductName').textContent = p.name;
+    document.getElementById('newColorName').value = '';
+    renderColorList(p.colors);
+    openModal('colorModal');
+  }
+
+  function renderColorList(colors) {
+    const container = document.getElementById('colorList');
+    if (!colors?.length) { container.innerHTML = `<p style="color:var(--text-light);text-align:center;padding:20px">ยังไม่มีสี กรุณาเพิ่มสีด้านล่าง</p>`; return; }
+    container.innerHTML = colors.map(c => `
+      <div class="color-row">
+        <div class="color-swatch-lg" style="background:${c.hex_code}"></div>
+        <div style="flex:1">
+          <strong>${c.name}</strong>
+          <div style="font-size:0.8rem;color:var(--text-light)">${c.hex_code} · ${c.images?.length || 0} รูป</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openImageModal(${c.id},'${c.name}')">📸 รูปภาพ</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteColor(${c.id})">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  async function addColor() {
+    const name = document.getElementById('newColorName').value.trim();
+    const hex = document.getElementById('newColorHex').value;
+    if (!name) { showToast('กรุณากรอกชื่อสี', 'error'); return; }
+    await adminFetch('/api/admin/colors', { method: 'POST', body: JSON.stringify({ product_id: currentProductId, name, hex_code: hex }) });
+    showToast('เพิ่มสีแล้ว', 'success');
+    document.getElementById('newColorName').value = '';
+    await loadProducts();
+    const p = products.find(x => x.id === currentProductId);
+    renderColorList(p?.colors);
+  }
+
+  async function deleteColor(id) {
+    if (!confirm('ลบสีนี้? รูปภาพทั้งหมดของสีนี้จะถูกลบด้วย')) return;
+    await adminFetch('/api/admin/colors/' + id, { method: 'DELETE' });
+    showToast('ลบสีแล้ว', 'success');
+    await loadProducts();
+    const p = products.find(x => x.id === currentProductId);
+    renderColorList(p?.colors);
+  }
+
+  // ===== IMAGE MANAGEMENT =====
+  function openImageModal(colorId, colorName) {
+    currentColorId = colorId;
+    document.getElementById('imgModalColorName').textContent = colorName;
+    loadColorImages(colorId);
+    openModal('imageModal');
+  }
+
+  async function loadColorImages(colorId) {
+    await loadProducts();
+    let images = [];
+    products.forEach(p => p.colors?.forEach(c => { if (c.id === colorId) images = c.images || []; }));
+    const container = document.getElementById('existingImages');
+    container.innerHTML = images.map(img => `
+      <div class="img-item">
+        <img src="${img.image_path}" alt="img">
+        <button class="del-btn" onclick="deleteImage(${img.id})">✕</button>
+      </div>
+    `).join('') || '<p style="color:var(--text-light);font-size:0.9rem">ยังไม่มีรูป</p>';
+  }
+
+  async function uploadImages(input) {
+    const form = new FormData();
+    [...input.files].forEach(f => form.append('images', f));
+    await adminFetch('/api/admin/colors/' + currentColorId + '/images', { method: 'POST', body: form });
+    showToast('อัปโหลดรูปสำเร็จ ✅', 'success');
+    input.value = '';
+    loadColorImages(currentColorId);
+  }
+
+  async function deleteImage(id) {
+    if (!confirm('ลบรูปภาพนี้?')) return;
+    await adminFetch('/api/admin/images/' + id, { method: 'DELETE' });
+    showToast('ลบรูปแล้ว', 'success');
+    loadColorImages(currentColorId);
+  }
+
+  // ===== STOCK/SIZE MANAGEMENT (per color+size) =====
+  async function openStockModal(productId) {
+    currentProductId = productId;
+    const p = products.find(x => x.id === productId);
+    document.getElementById('stockModalName').textContent = p.name;
+    document.getElementById('bulkPrice').value = '';
+    document.getElementById('bulkStock').value = '';
+    document.getElementById('bulkSku').value = '';
+    await renderStockTable(productId);
+    openModal('stockModal');
+  }
+
+  async function renderStockTable(productId) {
+    const res = await adminFetch(`/api/admin/products/${productId}/color-sizes`);
+    const { colors } = await res.json();
+    const tbody = document.getElementById('stockList');
+
+    if (!colors.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">ยังไม่มีสี กรุณาเพิ่มสีก่อน</td></tr>`;
+      return;
+    }
+
+    let rows = '';
+    colors.forEach(c => {
+      const thumb = c.images?.[0]?.image_path;
+      c.variants.forEach((v, vi) => {
+        const isFirst = vi === 0;
+        const colorCell = isFirst ? `
+          <td rowspan="${c.variants.length}" style="padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+              ${thumb ? `<img src="${thumb}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">` : `<div style="width:48px;height:48px;border-radius:8px;background:${c.hex_code};border:1px solid var(--border)"></div>`}
+              <span style="font-size:0.82rem;font-weight:600">${c.name}</span>
+            </div>
+          </td>` : '';
+        rows += `
+          <tr style="border-bottom:1px solid var(--border)">
+            ${colorCell}
+            <td style="padding:10px 12px;text-align:center;font-weight:700">${v.size_name}</td>
+            <td style="padding:8px 12px">
+              <div style="display:flex;align-items:center;gap:4px;border:1.5px solid var(--border);border-radius:8px;padding:0 8px;background:#fff">
+                <span style="color:var(--text-light);font-size:0.85rem">฿</span>
+                <input type="number" id="cs_price_${c.id}_${v.size_id}" value="${v.price !== null ? v.price : ''}" placeholder="ราคา" min="0"
+                  style="border:none;outline:none;padding:7px 4px;font-size:0.88rem;width:90px">
+              </div>
+            </td>
+            <td style="padding:8px 12px">
+              <input type="number" id="cs_stock_${c.id}_${v.size_id}" value="${v.stock}" min="0"
+                style="border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:0.88rem;width:80px;text-align:center">
+            </td>
+            <td style="padding:8px 12px">
+              <input type="text" id="cs_sku_${c.id}_${v.size_id}" value="${v.sku||''}" placeholder="ใส่ค่า"
+                style="border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:0.88rem;width:110px">
+            </td>
+            <td style="padding:8px 12px;text-align:center">
+              <button class="btn btn-primary btn-sm" onclick="saveColorSize(${c.id},${v.size_id})">บันทึก</button>
+            </td>
+          </tr>`;
+      });
+    });
+    tbody.innerHTML = rows;
+  }
+
+  async function saveColorSize(colorId, sizeId) {
+    const price = document.getElementById(`cs_price_${colorId}_${sizeId}`).value.trim();
+    const stock = document.getElementById(`cs_stock_${colorId}_${sizeId}`).value;
+    const sku = document.getElementById(`cs_sku_${colorId}_${sizeId}`).value.trim();
+    await adminFetch(`/api/admin/color-sizes/${colorId}/${sizeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ price: price !== '' ? parseFloat(price) : null, stock: parseInt(stock)||0, sku })
+    });
+    showToast('บันทึกแล้ว ✅', 'success');
+    loadProducts();
+  }
+
+  async function bulkUpdateStock() {
+    const price = document.getElementById('bulkPrice').value.trim();
+    const stock = document.getElementById('bulkStock').value.trim();
+    const sku = document.getElementById('bulkSku').value.trim();
+    if (!price && !stock && !sku) { showToast('กรอกอย่างน้อยหนึ่งช่อง', 'error'); return; }
+    await adminFetch(`/api/admin/products/${currentProductId}/color-sizes/bulk`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        price: price !== '' ? parseFloat(price) : null,
+        stock: stock !== '' ? parseInt(stock) : null,
+        sku: sku || null
+      })
+    });
+    showToast('อัพเดตทั้งหมดแล้ว ✅', 'success');
+    await renderStockTable(currentProductId);
+    loadProducts();
+  }
+
+  async function uploadCover(productId, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append('cover', file);
+    const res = await adminFetch('/api/admin/products/' + productId + '/cover', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.ok) { showToast('อัปโหลดภาพปกแล้ว ✅', 'success'); loadProducts(); }
+    else showToast('อัปโหลดไม่สำเร็จ', 'error');
+    input.value = '';
+  }
+
+  // ===== GALLERY SLIDESHOW =====
+  async function openGalleryModal(productId) {
+    currentProductId = productId;
+    const p = products.find(x => x.id === productId);
+    document.getElementById('galleryModalName').textContent = p.name;
+    setGalleryToggleUI(p.gallery_enabled !== 0);
+    await loadGalleryImgs();
+    openModal('galleryModal');
+  }
+
+  function setGalleryToggleUI(enabled) {
+    const cb = document.getElementById('galleryToggle');
+    const track = document.getElementById('galleryToggleTrack');
+    const thumb = document.getElementById('galleryToggleThumb');
+    cb.checked = enabled;
+    track.style.background = enabled ? '#7c3aed' : '#ccc';
+    thumb.style.left = enabled ? '25px' : '3px';
+  }
+
+  async function saveGalleryToggle() {
+    const enabled = document.getElementById('galleryToggle').checked;
+    setGalleryToggleUI(enabled);
+    await adminFetch(`/api/admin/products/${currentProductId}/gallery-toggle`, { method:'PUT', body: JSON.stringify({ enabled }) });
+    showToast(enabled ? 'เปิด Slideshow แล้ว ✅' : 'ปิด Slideshow แล้ว', 'success');
+    loadProducts();
+  }
+
+  async function loadGalleryImgs() {
+    const res = await adminFetch(`/api/admin/products/${currentProductId}/gallery`);
+    const imgs = await res.json();
+    const grid = document.getElementById('galleryImgGrid');
+    if (!imgs.length) { grid.innerHTML = '<p style="color:var(--text-light);font-size:0.85rem;grid-column:1/-1">ยังไม่มีรูป Slideshow</p>'; return; }
+    grid.innerHTML = imgs.map(img => `
+      <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1/1;border:1.5px solid var(--border)">
+        <img src="${img.image_path}" style="width:100%;height:100%;object-fit:cover">
+        <button onclick="deleteGalleryImg(${img.id})" style="position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(220,38,38,0.85);color:white;border:none;cursor:pointer;font-size:0.75rem;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>`).join('');
+  }
+
+  async function uploadGalleryImgs(input) {
+    if (!input.files.length) return;
+    const form = new FormData();
+    [...input.files].forEach(f => form.append('images', f));
+    await adminFetch(`/api/admin/products/${currentProductId}/gallery`, { method:'POST', body: form });
+    showToast('อัปโหลดแล้ว ✅', 'success');
+    input.value = '';
+    loadGalleryImgs();
+  }
+
+  async function deleteGalleryImg(id) {
+    if (!confirm('ลบรูปนี้?')) return;
+    await adminFetch(`/api/admin/gallery/${id}`, { method:'DELETE' });
+    showToast('ลบแล้ว', 'success');
+    loadGalleryImgs();
+  }
+
+  loadProducts();
+</script>
+</body>
+</html>

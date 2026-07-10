@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตั้งค่า - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 1fr 380px; gap: 24px; align-items: start; }
+    @media(max-width:900px){ .settings-grid { grid-template-columns: 1fr; } }
+    .settings-section { background: white; border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; box-shadow: var(--shadow); }
+    .settings-section h3 { font-size: 0.95rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 8px; }
+    .color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .color-row label { flex: 1; font-weight: 600; font-size: 0.88rem; color: var(--text); }
+    .color-picker-wrap { display: flex; align-items: center; gap: 8px; }
+    .color-picker-wrap input[type=color] { width: 44px; height: 36px; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; padding: 2px; }
+    .color-hex { width: 90px; padding: 7px 10px; border: 2px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.88rem; }
+    .scale-preview { display: flex; gap: 4px; margin-top: 6px; }
+    .scale-swatch { height: 20px; border-radius: 4px; flex: 1; }
+
+    /* Live preview */
+    .preview-card { background: white; border-radius: 16px; padding: 0; overflow: hidden; box-shadow: var(--shadow); position: sticky; top: 88px; }
+    .preview-title { font-size: 0.8rem; font-weight: 700; color: var(--text-light); padding: 14px 18px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .preview-frame { padding: 0; }
+    .pv-nav { padding: 0 16px; height: 48px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; }
+    .pv-logo { font-size: 1rem; font-weight: 900; }
+    .pv-btn  { font-size: 0.72rem; font-weight: 700; padding: 5px 12px; border-radius: 8px; color: white; border: none; }
+    .pv-hero { padding: 20px 16px; text-align: center; }
+    .pv-hero h2 { font-size: 1rem; font-weight: 900; margin-bottom: 4px; }
+    .pv-hero p  { font-size: 0.75rem; }
+    .pv-products { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 16px 16px; }
+    .pv-product { border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
+    .pv-product-img { height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+    .pv-product-info { padding: 6px 8px; }
+    .pv-product-name { font-size: 0.72rem; font-weight: 700; }
+    .pv-product-price { font-size: 0.85rem; font-weight: 900; }
+
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 6px; box-shadow: var(--shadow); overflow-x: auto; scrollbar-width: none; }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; white-space: nowrap; padding: 10px 16px; border: none; border-radius: 8px; font-family: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; background: none; color: var(--text-light); transition: all 0.18s; }
+    .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(2,132,199,.3); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .pv-tab { flex: 1; padding: 6px 4px; border: none; border-radius: 7px; font-family: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; background: none; color: var(--text-light); transition: all 0.15s; }
+    .pv-tab.active { background: var(--primary); color: white; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo">🌟 EasyCart</div><p>ระบบจัดการร้านค้า</p></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item active" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar"><h1>⚙️ ตั้งค่าระบบ</h1></div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('theme',this)">🎨 ธีมและการแต่งหน้าเว็บ</button>
+      <button class="tab-btn" onclick="switchTab('sizechart',this)">📐 ตาราง Size</button>
+      <button class="tab-btn" onclick="switchTab('popup',this)">🎉 Popup โปรโมชั่น</button>
+      <button class="tab-btn" onclick="switchTab('password',this)">🔑 เปลี่ยนรหัสผ่าน</button>
+    </div>
+
+    <!-- ===== THEME TAB ===== -->
+    <div class="tab-pane active" id="tab-theme">
+      <div class="settings-grid">
+        <!-- Left: form -->
+        <div>
+
+          <!-- แบรนด์ -->
+          <div class="settings-section">
+            <h3>🏪 ชื่อร้านและโลโก้</h3>
+            <div class="form-group">
+              <label>ชื่อร้าน</label>
+              <input type="text" id="store_name" placeholder="EasyCart" oninput="updatePreview()">
+            </div>
+
+            <!-- Logo image upload -->
+            <div class="form-group">
+              <label>รูปโลโก้ <span style="font-weight:400;color:var(--text-light)">(แทนไอคอน emoji)</span></label>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <div id="logoImgPreview" style="width:80px;height:80px;border-radius:12px;border:2px dashed var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;cursor:pointer;flex-shrink:0" onclick="document.getElementById('logoUploadInput').click()" title="คลิกเพื่ออัปโหลด">
+                  <span id="logoImgPlaceholder">🖼️</span>
+                </div>
+                <div>
+                  <button class="btn btn-outline btn-sm" onclick="document.getElementById('logoUploadInput').click()">📤 อัปโหลดรูปโลโก้</button>
+                  <button class="btn btn-outline btn-sm" id="removeLogoBtn" onclick="removeLogo()" style="display:none;margin-left:8px;border-color:#e55;color:#c33">🗑️ ลบรูป</button>
+                  <p style="font-size:0.78rem;color:var(--text-light);margin-top:6px">PNG, JPG, SVG — สูงสุด 2MB<br>แนะนำ: พื้นหลังโปร่งใส (PNG)</p>
+                </div>
+              </div>
+              <input type="file" id="logoUploadInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+            </div>
+
+            <div class="form-group">
+              <label>ไอคอนโลโก้ (emoji) <span style="font-weight:400;color:var(--text-light)">— ใช้เมื่อไม่มีรูปโลโก้</span></label>
+              <input type="text" id="logo_icon" placeholder="🛒" style="font-size:1.4rem" oninput="updatePreview()">
+            </div>
+            <div class="color-row">
+              <label>สีตัวอักษรชื่อร้าน (Nav)<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปล่อยว่าง = ใช้สีหลักของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_logo" value="#0284C7" oninput="syncHex('color_logo');updatePreview()">
+                <input type="text" class="color-hex" id="color_logo_hex" value="#0284C7" oninput="syncPicker('color_logo');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สี -->
+          <div class="settings-section">
+            <h3>🎨 สีหลัก</h3>
+
+            <div class="color-row">
+              <label>สีหลัก (Primary)<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปุ่ม, header, ลิงก์</span></label>
+              <div>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color_primary" value="#0284C7" oninput="syncHex('color_primary');updatePreview()">
+                  <input type="text" class="color-hex" id="color_primary_hex" value="#0284C7"
+                    oninput="syncPicker('color_primary');updatePreview()" maxlength="7" spellcheck="false">
+                </div>
+                <div class="scale-preview" id="scale_primary"></div>
+              </div>
+            </div>
+
+            <div class="color-row">
+              <label>สีสำเนียง (Accent)<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ราคา, ไฮไลท์, ปุ่มตะกร้า</span></label>
+              <div>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color_accent" value="#DB2777" oninput="syncHex('color_accent');updatePreview()">
+                  <input type="text" class="color-hex" id="color_accent_hex" value="#DB2777"
+                    oninput="syncPicker('color_accent');updatePreview()" maxlength="7" spellcheck="false">
+                </div>
+                <div class="scale-preview" id="scale_accent"></div>
+              </div>
+            </div>
+
+            <div class="color-row">
+              <label>สีพื้นหลัง<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">background ทั้งหน้า</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_bg" value="#F5F8FF" oninput="syncHex('color_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_bg_hex" value="#F5F8FF"
+                  oninput="syncPicker('color_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สีฟอนต์ -->
+          <div class="settings-section">
+            <h3>✏️ สีตัวอักษร</h3>
+
+            <div class="color-row">
+              <label>หัวข้อหลัก<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ชื่อสินค้า, หัวเรื่อง</span></label>
+              <div>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color_text_dark" value="#1E2A50" oninput="syncHex('color_text_dark');updatePreview()">
+                  <input type="text" class="color-hex" id="color_text_dark_hex" value="#1E2A50" oninput="syncPicker('color_text_dark');updatePreview()" maxlength="7" spellcheck="false">
+                </div>
+              </div>
+            </div>
+
+            <div class="color-row">
+              <label>เนื้อหาทั่วไป<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ข้อความ, label</span></label>
+              <div>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color_text_body" value="#4A5C88" oninput="syncHex('color_text_body');updatePreview()">
+                  <input type="text" class="color-hex" id="color_text_body_hex" value="#4A5C88" oninput="syncPicker('color_text_body');updatePreview()" maxlength="7" spellcheck="false">
+                </div>
+              </div>
+            </div>
+
+            <div class="color-row">
+              <label>ข้อความรอง<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">placeholder, hint</span></label>
+              <div>
+                <div class="color-picker-wrap">
+                  <input type="color" id="color_text_light" value="#94A3C8" oninput="syncHex('color_text_light');updatePreview()">
+                  <input type="text" class="color-hex" id="color_text_light_hex" value="#94A3C8" oninput="syncPicker('color_text_light');updatePreview()" maxlength="7" spellcheck="false">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ฟอนต์ -->
+          <div class="settings-section">
+            <h3>🔤 ฟอนต์</h3>
+            <div class="form-group">
+              <label>ฟอนต์ภาษาไทย (Google Fonts)</label>
+              <select id="font_family" onchange="updatePreview()">
+                <option value="Noto Sans Thai">Noto Sans Thai (ค่าเริ่มต้น)</option>
+                <option value="Sarabun">Sarabun</option>
+                <option value="Kanit">Kanit</option>
+                <option value="Prompt">Prompt</option>
+                <option value="Mitr">Mitr</option>
+                <option value="Chonburi">Chonburi</option>
+                <option value="Chakra Petch">Chakra Petch</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- หน้าแรก -->
+          <div class="settings-section">
+            <h3>🏠 หน้าแรก (Hero Section)</h3>
+            <div class="form-group">
+              <label>หัวข้อหลัก</label>
+              <input type="text" id="hero_title" placeholder="เสื้อยืดน่ารัก สีสวย 🎨" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+              <label>คำอธิบาย</label>
+              <input type="text" id="hero_subtitle" placeholder="เลือกสีที่ชอบ เลือกไซส์ที่ใช่ ส่งตรงถึงบ้าน" oninput="updatePreview()">
+            </div>
+            <div class="color-row">
+              <label>สีข้อความหัวข้อ<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">สีหัวข้อใหญ่ใน banner</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_hero_text" value="#FFFFFF" oninput="syncHex('color_hero_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_hero_text_hex" value="#FFFFFF" oninput="syncPicker('color_hero_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีข้อความรอง<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">คำอธิบายใน banner</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_hero_sub" value="#FFFFFF" oninput="syncHex('color_hero_sub');updatePreview()">
+                <input type="text" class="color-hex" id="color_hero_sub_hex" value="#FFFFFF" oninput="syncPicker('color_hero_sub');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- Badge -->
+          <div class="settings-section">
+            <h3>🏷️ ป้ายข้อความ (Badges) ใต้ Hero</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="form-group" style="margin:0">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  <span>ป้าย 1</span>
+                  <label class="toggle-switch" style="margin:0">
+                    <input type="checkbox" id="badge_1_enabled" checked onchange="updatePreview()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </label>
+                <input type="text" id="badge_1" placeholder="✦ Cotton 100%" oninput="updatePreview()">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  <span>ป้าย 2</span>
+                  <label class="toggle-switch" style="margin:0">
+                    <input type="checkbox" id="badge_2_enabled" checked onchange="updatePreview()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </label>
+                <input type="text" id="badge_2" placeholder="🚚 ส่งทั่วไทย" oninput="updatePreview()">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  <span>ป้าย 3</span>
+                  <label class="toggle-switch" style="margin:0">
+                    <input type="checkbox" id="badge_3_enabled" checked onchange="updatePreview()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </label>
+                <input type="text" id="badge_3" placeholder="✦ หลากสีให้เลือก" oninput="updatePreview()">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label style="display:flex;align-items:center;justify-content:space-between">
+                  <span>ป้าย 4</span>
+                  <label class="toggle-switch" style="margin:0">
+                    <input type="checkbox" id="badge_4_enabled" checked onchange="updatePreview()">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </label>
+                <input type="text" id="badge_4" placeholder="🌟 คุณภาพดี" oninput="updatePreview()">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีตัวอักษรป้าย</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="badge_color" value="#FFFFFF" oninput="syncHex('badge_color');updatePreview()">
+                <input type="text" class="color-hex" id="badge_color_hex" value="#FFFFFF" oninput="syncPicker('badge_color');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สีปุ่ม -->
+          <div class="settings-section">
+            <h3>🔘 สีตัวอักษรบนปุ่ม</h3>
+            <div class="color-row">
+              <label>ปุ่มหลัก (Primary)<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปุ่มสีหลักของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_btn_primary_text" value="#FFFFFF" oninput="syncHex('color_btn_primary_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_btn_primary_text_hex" value="#FFFFFF" oninput="syncPicker('color_btn_primary_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>ปุ่มเน้น (Accent)<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปุ่ม "สั่งซื้อ / เพิ่มลงตะกร้า"</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_btn_accent_text" value="#FFFFFF" oninput="syncHex('color_btn_accent_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_btn_accent_text_hex" value="#FFFFFF" oninput="syncPicker('color_btn_accent_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- วิธีชำระเงิน -->
+          <div class="settings-section">
+            <h3>💳 วิธีชำระเงิน</h3>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block">ชื่อธนาคาร</label>
+              <input type="text" id="bank_name" value="ธนาคารกสิกรไทย (KBank)" placeholder="เช่น ธนาคารกสิกรไทย (KBank)" oninput="updatePreview()" style="width:100%;box-sizing:border-box;padding:9px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;background:var(--surface);color:var(--text-dark)">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block">เลขบัญชี</label>
+              <input type="text" id="bank_account" value="xxx-x-xxxxx-x" placeholder="เช่น 012-3-45678-9" oninput="updatePreview()" style="width:100%;box-sizing:border-box;padding:9px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;background:var(--surface);color:var(--text-dark);font-family:monospace;letter-spacing:1px">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label style="font-size:0.78rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block">ชื่อบัญชี</label>
+              <input type="text" id="bank_account_name" value="EasyCart Store" placeholder="ชื่อเจ้าของบัญชี" oninput="updatePreview()" style="width:100%;box-sizing:border-box;padding:9px 13px;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;background:var(--surface);color:var(--text-dark)">
+            </div>
+          </div>
+
+          <!-- สีหน้าแจ้งโอน -->
+          <div class="settings-section">
+            <h3>💸 หน้าแจ้งโอนเงิน (Payment)</h3>
+            <div class="color-row">
+              <label>สีหัวข้อ</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_payment_title" value="#1e3a5f" oninput="syncHex('color_payment_title');updatePreview()">
+                <input type="text" class="color-hex" id="color_payment_title_hex" value="#1e3a5f" oninput="syncPicker('color_payment_title');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีคำอธิบาย</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_payment_sub" value="#94a3b8" oninput="syncHex('color_payment_sub');updatePreview()">
+                <input type="text" class="color-hex" id="color_payment_sub_hex" value="#94a3b8" oninput="syncPicker('color_payment_sub');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีพื้นหลัง Upload</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_payment_upload_bg" value="#e0f0ff" oninput="syncHex('color_payment_upload_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_payment_upload_bg_hex" value="#e0f0ff" oninput="syncPicker('color_payment_upload_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีขอบ Upload</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_payment_upload_border" value="#7dd3fc" oninput="syncHex('color_payment_upload_border');updatePreview()">
+                <input type="text" class="color-hex" id="color_payment_upload_border_hex" value="#7dd3fc" oninput="syncPicker('color_payment_upload_border');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สีหน้าสินค้า -->
+          <div class="settings-section">
+            <h3>🛍️ หน้าสินค้า (Product)</h3>
+            <div class="color-row">
+              <label>สีชื่อสินค้า</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_product_name" value="#1e3a5f" oninput="syncHex('color_product_name');updatePreview()">
+                <input type="text" class="color-hex" id="color_product_name_hex" value="#1e3a5f" oninput="syncPicker('color_product_name');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีราคาสินค้า</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_product_price" value="#DB2777" oninput="syncHex('color_product_price');updatePreview()">
+                <input type="text" class="color-hex" id="color_product_price_hex" value="#DB2777" oninput="syncPicker('color_product_price');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีพื้นหลังกรอบรูป</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_product_gallery_bg" value="#e0f0ff" oninput="syncHex('color_product_gallery_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_product_gallery_bg_hex" value="#e0f0ff" oninput="syncPicker('color_product_gallery_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีพื้นหลังรายละเอียด</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_product_desc_bg" value="#f8f9fa" oninput="syncHex('color_product_desc_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_product_desc_bg_hex" value="#f8f9fa" oninput="syncPicker('color_product_desc_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีตัวอักษรรายละเอียด</label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_product_desc_text" value="#4b5563" oninput="syncHex('color_product_desc_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_product_desc_text_hex" value="#4b5563" oninput="syncPicker('color_product_desc_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สีหน้าสั่งซื้อ -->
+          <div class="settings-section">
+            <h3>🛒 หน้าสั่งซื้อ (Checkout)</h3>
+            <div class="color-row">
+              <label>สีหัวข้อ Card<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">📦 ข้อมูลจัดส่ง · 💳 ชำระเงิน · 🛒 สรุป</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_checkout_heading" value="#0284C7" oninput="syncHex('color_checkout_heading');updatePreview()">
+                <input type="text" class="color-hex" id="color_checkout_heading_hex" value="#0284C7" oninput="syncPicker('color_checkout_heading');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีพื้นกล่องธนาคาร<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">กล่องแสดงเลขบัญชี</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_bank_bg" value="#0284C7" oninput="syncHex('color_bank_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_bank_bg_hex" value="#0284C7" oninput="syncPicker('color_bank_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีตัวอักษรในกล่องธนาคาร<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ชื่อธนาคาร เลขบัญชี ชื่อบัญชี</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_bank_text" value="#FFFFFF" oninput="syncHex('color_bank_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_bank_text_hex" value="#FFFFFF" oninput="syncPicker('color_bank_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- สีหน้าติดตามออเดอร์ -->
+          <div class="settings-section">
+            <h3>🔍 หน้าติดตามออเดอร์</h3>
+            <div class="color-row">
+              <label>สีหัวข้อ "ติดตามออเดอร์"<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปล่อยว่าง = ใช้สีหลักของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_track_title" value="#0284C7" oninput="syncHex('color_track_title')">
+                <input type="text" class="color-hex" id="color_track_title_hex" value="#0284C7" oninput="syncPicker('color_track_title')" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีคำอธิบายใต้หัวข้อ<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ข้อความ "ใส่เลขออเดอร์…"</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_track_sub" value="#94A3C8" oninput="syncHex('color_track_sub')">
+                <input type="text" class="color-hex" id="color_track_sub_hex" value="#94A3C8" oninput="syncPicker('color_track_sub')" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีเลขออเดอร์ SR…<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปล่อยว่าง = ใช้สีหลักของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_track_id" value="#0284C7" oninput="syncHex('color_track_id');updatePreview()">
+                <input type="text" class="color-hex" id="color_track_id_hex" value="#0284C7" oninput="syncPicker('color_track_id');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สียอดรวม ฿<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปล่อยว่าง = ใช้สีเน้นของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_track_total" value="#DB2777" oninput="syncHex('color_track_total');updatePreview()">
+                <input type="text" class="color-hex" id="color_track_total_hex" value="#DB2777" oninput="syncPicker('color_track_total');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีพื้นช่องสถานะ<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">พื้นหลังของ progress bar</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_track_step_bg" value="#F0F9FF" oninput="syncHex('color_track_step_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_track_step_bg_hex" value="#F0F9FF" oninput="syncPicker('color_track_step_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div style="margin-top:12px"><div class="field-label" style="margin-bottom:10px">สีป้ายสถานะ</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div>
+                  <div style="font-size:0.78rem;font-weight:600;margin-bottom:6px">รอชำระ 💰</div>
+                  <div style="display:flex;gap:6px">
+                    <input type="color" id="color_status_pending_bg" value="#FFF4DD" oninput="syncHex('color_status_pending_bg')" title="พื้นหลัง" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <input type="color" id="color_status_pending_txt" value="#7A5500" oninput="syncHex('color_status_pending_txt')" title="ตัวอักษร" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <span style="font-size:0.72rem;color:var(--text-light);line-height:32px">พื้น · ตัวอักษร</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.78rem;font-weight:600;margin-bottom:6px">จัดส่งแล้ว 🚚</div>
+                  <div style="display:flex;gap:6px">
+                    <input type="color" id="color_status_shipped_bg" value="#E2D9F3" oninput="syncHex('color_status_shipped_bg')" title="พื้นหลัง" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <input type="color" id="color_status_shipped_txt" value="#4A2880" oninput="syncHex('color_status_shipped_txt')" title="ตัวอักษร" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <span style="font-size:0.72rem;color:var(--text-light);line-height:32px">พื้น · ตัวอักษร</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.78rem;font-weight:600;margin-bottom:6px">รับแล้ว ✅</div>
+                  <div style="display:flex;gap:6px">
+                    <input type="color" id="color_status_delivered_bg" value="#D4EDDA" oninput="syncHex('color_status_delivered_bg')" title="พื้นหลัง" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <input type="color" id="color_status_delivered_txt" value="#0A4020" oninput="syncHex('color_status_delivered_txt')" title="ตัวอักษร" style="width:36px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer">
+                    <span style="font-size:0.72rem;color:var(--text-light);line-height:32px">พื้น · ตัวอักษร</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- สี Footer -->
+          <div class="settings-section">
+            <h3>🎨 สีส่วน Footer</h3>
+            <div class="color-row">
+              <label>สีพื้นหลัง Footer<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">ปล่อยว่าง = ใช้สีหลักของร้าน</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_footer_bg" value="#0c4a6e" oninput="syncHex('color_footer_bg');updatePreview()">
+                <input type="text" class="color-hex" id="color_footer_bg_hex" value="#0c4a6e" oninput="syncPicker('color_footer_bg');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+            <div class="color-row">
+              <label>สีตัวอักษร Footer<br><span style="font-weight:400;font-size:0.8rem;color:var(--text-light)">โลโก้ หัวข้อ ลิงก์ ทั้งหมด</span></label>
+              <div class="color-picker-wrap">
+                <input type="color" id="color_footer_text" value="#FFFFFF" oninput="syncHex('color_footer_text');updatePreview()">
+                <input type="text" class="color-hex" id="color_footer_text_hex" value="#FFFFFF" oninput="syncPicker('color_footer_text');updatePreview()" maxlength="7" spellcheck="false">
+              </div>
+            </div>
+          </div>
+
+          <!-- ติดต่อ -->
+          <div class="settings-section">
+            <h3>📞 ข้อมูลติดต่อ (Footer)</h3>
+            <div class="form-group">
+              <label>คำอธิบายร้าน</label>
+              <input type="text" id="footer_desc" placeholder="ร้านเสื้อยืดน่ารัก คุณภาพดี...">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label>Line ID</label>
+                <input type="text" id="footer_line" placeholder="@easycart">
+              </div>
+              <div class="form-group">
+                <label>Facebook</label>
+                <input type="text" id="footer_fb" placeholder="EasyCart">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="text" id="footer_email" placeholder="shop@easycart.com">
+            </div>
+            <div class="form-group">
+              <label>Copyright</label>
+              <input type="text" id="footer_copy" placeholder="© 2024 EasyCart...">
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveTheme()" id="saveThemeBtn" style="width:100%;padding:14px;font-size:1rem">
+            💾 บันทึกธีม
+          </button>
+        </div>
+
+        <!-- Right: live preview -->
+        <div class="preview-card">
+          <div class="preview-title">👁️ ตัวอย่างธีม (Live Preview)</div>
+          <div style="display:flex;gap:3px;padding:10px 14px 0">
+            <button class="pv-tab active" onclick="switchPreview('home',this)">🏠 หน้าแรก</button>
+            <button class="pv-tab" onclick="switchPreview('checkout',this)">🛒 สั่งซื้อ</button>
+            <button class="pv-tab" onclick="switchPreview('track',this)">🔍 ติดตาม</button>
+            <button class="pv-tab" onclick="switchPreview('product',this)">🛍️ สินค้า</button>
+            <button class="pv-tab" onclick="switchPreview('payment',this)">💸 โอนเงิน</button>
+          </div>
+          <div class="preview-frame" id="pvHome"></div>
+          <div class="preview-frame" id="pvCheckout" style="display:none"></div>
+          <div class="preview-frame" id="pvTrack" style="display:none"></div>
+          <div class="preview-frame" id="pvProduct" style="display:none"></div>
+          <div class="preview-frame" id="pvPayment" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SIZE CHART TAB ===== -->
+    <div class="tab-pane" id="tab-sizechart">
+      <div style="max-width:560px">
+
+        <div class="settings-section">
+          <h3>🖼️ Gallery Slideshow</h3>
+          <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px">เปิด/ปิดปุ่มลูกศร ← → และ thumbnail navigation ในหน้าสินค้า</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:12px;border:1.5px solid var(--border)">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">Slideshow ลูกศร ← →</div>
+              <div style="font-size:0.8rem;color:var(--text-light);margin-top:2px">แสดงปุ่มสไลด์รูปในหน้าสินค้า</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">
+              <input type="checkbox" id="gallery_slider_enabled" onchange="saveSliderToggle(this)"
+                style="opacity:0;width:0;height:0;position:absolute">
+              <span id="sliderToggleTrack" onclick="document.getElementById('gallery_slider_enabled').click()"
+                style="position:absolute;inset:0;border-radius:26px;background:#ccc;cursor:pointer;transition:.2s">
+                <span id="sliderToggleThumb" style="position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;left:3px;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>📐 ตาราง Size</h3>
+          <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px">รูปตาราง Size จะแสดงให้ลูกค้าดูได้จากปุ่ม "ดูตาราง Size" หน้าสินค้า</p>
+
+          <div id="sizeChartPreviewWrap" style="margin-bottom:16px;display:none">
+            <img id="sizeChartPreview" src="" style="max-width:100%;border-radius:12px;border:1.5px solid var(--border)">
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('sizeChartInput').click()">🔄 เปลี่ยนรูป</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSizeChart()">🗑️ ลบรูป</button>
+            </div>
+          </div>
+
+          <div id="sizeChartUploadZone" class="upload-zone" onclick="document.getElementById('sizeChartInput').click()" style="cursor:pointer">
+            <div style="font-size:2rem;margin-bottom:8px">📤</div>
+            <p style="font-weight:700">คลิกเพื่ออัปโหลดรูปตาราง Size</p>
+            <p style="font-size:0.8rem;color:var(--text-light)">PNG, JPG ขนาดไม่เกิน 5MB</p>
+          </div>
+          <input type="file" id="sizeChartInput" accept="image/*" style="display:none" onchange="uploadSizeChart(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== POPUP TAB ===== -->
+    <div class="tab-pane" id="tab-popup">
+      <div style="max-width:560px">
+        <div class="settings-section">
+          <h3>🎉 Popup โปรโมชั่นหน้าแรก</h3>
+          <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px">รูปที่อัปโหลดจะแสดงเป็น popup เมื่อลูกค้าเปิดหน้าเว็บ (แสดง 1 ครั้งต่อ session)</p>
+
+          <!-- เปิด/ปิด -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-radius:12px;border:1.5px solid var(--border);margin-bottom:20px">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">เปิดใช้งาน Popup</div>
+              <div style="font-size:0.8rem;color:var(--text-light);margin-top:2px">เปิด/ปิดการแสดง popup บนหน้าเว็บ</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0">
+              <input type="checkbox" id="popup_enabled" onchange="savePopupToggle(this)" style="opacity:0;width:0;height:0;position:absolute">
+              <span id="popupToggleTrack" onclick="document.getElementById('popup_enabled').click()"
+                style="position:absolute;inset:0;border-radius:26px;background:#ccc;cursor:pointer;transition:.2s">
+                <span id="popupToggleThumb" style="position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;left:3px;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.2)"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- ลิงก์เมื่อกดรูป -->
+          <div class="form-group" style="margin-bottom:20px">
+            <label>ลิงก์เมื่อกดรูป (ไม่บังคับ)</label>
+            <input type="text" id="popup_link" placeholder="เช่น /product.html?id=1 หรือ https://..." oninput="savePopupLink()">
+          </div>
+
+          <!-- preview -->
+          <div id="popupPreviewWrap" style="margin-bottom:16px;display:none">
+            <img id="popupPreview" src="" style="max-width:100%;border-radius:12px;border:1.5px solid var(--border)">
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('popupInput').click()">🔄 เปลี่ยนรูป</button>
+              <button class="btn btn-danger btn-sm" onclick="deletePopupImage()">🗑️ ลบรูป</button>
+            </div>
+          </div>
+          <div id="popupUploadZone" class="upload-zone" onclick="document.getElementById('popupInput').click()" style="cursor:pointer">
+            <div style="font-size:2rem;margin-bottom:8px">📤</div>
+            <p style="font-weight:700">คลิกเพื่ออัปโหลดรูป Popup</p>
+            <p style="font-size:0.8rem;color:var(--text-light)">PNG, JPG ขนาดไม่เกิน 5MB</p>
+          </div>
+          <input type="file" id="popupInput" accept="image/*" style="display:none" onchange="uploadPopupImage(this)">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PASSWORD TAB ===== -->
+    <div class="tab-pane" id="tab-password">
+      <div style="max-width:480px">
+        <div class="settings-section">
+          <h3>🔑 เปลี่ยนรหัสผ่าน Admin</h3>
+          <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:20px">รหัสผ่านใหม่จะมีผลทันทีและบันทึกลงไฟล์ .env</p>
+
+          <div class="form-group">
+            <label>รหัสผ่านปัจจุบัน</label>
+            <div style="position:relative">
+              <input type="password" id="currentPass" placeholder="กรอกรหัสผ่านปัจจุบัน" autocomplete="current-password">
+              <button onclick="toggleVis('currentPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-light)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>รหัสผ่านใหม่ <span style="font-weight:400;color:var(--text-light)">(อย่างน้อย 6 ตัวอักษร)</span></label>
+            <div style="position:relative">
+              <input type="password" id="newPass" placeholder="กรอกรหัสผ่านใหม่" autocomplete="new-password">
+              <button onclick="toggleVis('newPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-light)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>ยืนยันรหัสผ่านใหม่</label>
+            <div style="position:relative">
+              <input type="password" id="confirmPass" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
+              <button onclick="toggleVis('confirmPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-light)">👁️</button>
+            </div>
+          </div>
+
+          <div id="passError" style="display:none;background:#FEF0F0;color:#8B1A1A;padding:10px 14px;border-radius:10px;font-size:0.85rem;margin-bottom:16px"></div>
+
+          <button class="btn btn-primary" onclick="changePassword()" id="savePassBtn" style="width:100%;padding:13px">
+            🔐 บันทึกรหัสผ่านใหม่
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/admin/admin.js"></script>
+<script>
+// ===== COLOR UTILS =====
+function hexToHsl(hex) {
+  let r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}
+  else{const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}h/=6;}
+  return[h*360,s*100,l*100];
+}
+function hslToHex(h,s,l){
+  h/=360;s/=100;l/=100;let r,g,b;
+  if(s===0){r=g=b=l;}
+  else{const q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q;const hue2=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};r=hue2(p,q,h+1/3);g=hue2(p,q,h);b=hue2(p,q,h-1/3);}
+  return'#'+[r,g,b].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
+}
+function colorScale(hex){
+  const[h,s,l]=hexToHsl(hex);
+  return{
+    '50': hslToHex(h,Math.min(s*0.18,25),97),
+    '100':hslToHex(h,Math.min(s*0.3,35),93),
+    '200':hslToHex(h,Math.min(s*0.5,55),87),
+    '400':hslToHex(h,s*0.88,Math.min(l+26,72)),
+    '500':hslToHex(h,s*0.94,Math.min(l+12,62)),
+    '600':hex,
+    '700':hslToHex(h,s,Math.max(l-10,10)),
+    '800':hslToHex(h,s,Math.max(l-22,6)),
+  };
+}
+
+// ===== LOGO UPLOAD =====
+let currentLogoImage = '';
+
+async function uploadLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('logo', file);
+  const res = await adminFetch('/api/admin/upload-logo', { method:'POST', body: form });
+  const data = await res.json();
+  if (data.ok) {
+    currentLogoImage = data.logo_image;
+    setLogoPreview(data.logo_image);
+    showToast('อัปโหลดโลโก้แล้ว ✅', 'success');
+    updatePreview();
+  } else showToast('อัปโหลดไม่สำเร็จ', 'error');
+  input.value = '';
+}
+
+async function removeLogo() {
+  if (!confirm('ลบรูปโลโก้?')) return;
+  await adminFetch('/api/admin/logo', { method:'DELETE' });
+  currentLogoImage = '';
+  setLogoPreview('');
+  showToast('ลบโลโก้แล้ว', 'success');
+  updatePreview();
+}
+
+function setLogoPreview(src) {
+  const wrap = document.getElementById('logoImgPreview');
+  const placeholder = document.getElementById('logoImgPlaceholder');
+  const removeBtn = document.getElementById('removeLogoBtn');
+  if (src) {
+    placeholder.style.display = 'none';
+    let img = wrap.querySelector('img');
+    if (!img) { img = document.createElement('img'); img.style.cssText='width:100%;height:100%;object-fit:contain'; wrap.appendChild(img); }
+    img.src = src + '?t=' + Date.now();
+    removeBtn.style.display = 'inline-flex';
+  } else {
+    placeholder.style.display = '';
+    const img = wrap.querySelector('img');
+    if (img) img.remove();
+    removeBtn.style.display = 'none';
+  }
+}
+
+// ===== SYNC color picker <-> hex input =====
+function syncHex(id) {
+  document.getElementById(id+'_hex').value = document.getElementById(id).value;
+  renderScalePreview(id);
+}
+function syncPicker(id) {
+  const v = document.getElementById(id+'_hex').value;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    document.getElementById(id).value = v;
+    renderScalePreview(id);
+  }
+}
+function renderScalePreview(id) {
+  const el = document.getElementById('scale_'+id.replace('color_',''));
+  if (!el) return;
+  const hex = document.getElementById(id).value;
+  const sc = colorScale(hex);
+  el.innerHTML = Object.values(sc).map(c=>`<div class="scale-swatch" style="background:${c}" title="${c}"></div>`).join('');
+}
+
+// ===== LIVE PREVIEW =====
+let _pvBanners = null; // cached banner list for preview
+
+async function _fetchPvBanners() {
+  try {
+    const r = await fetch('/api/banners');
+    _pvBanners = await r.json();
+  } catch(e) { _pvBanners = []; }
+}
+
+async function updatePreview() {
+  if (_pvBanners === null) await _fetchPvBanners();
+  const p   = document.getElementById('color_primary').value;
+  const a   = document.getElementById('color_accent').value;
+  const bg  = document.getElementById('color_bg').value;
+  const td  = document.getElementById('color_text_dark').value;
+  const tb  = document.getElementById('color_text_body').value;
+  const tl  = document.getElementById('color_text_light').value;
+  const ht  = document.getElementById('color_hero_text').value || '#ffffff';
+  const hs  = document.getElementById('color_hero_sub').value  || '#ffffff';
+  const name = document.getElementById('store_name').value || 'EasyCart';
+  const icon = document.getElementById('logo_icon').value || '🛒';
+  const heroTitle = document.getElementById('hero_title').value || 'เสื้อยืดน่ารัก สีสวย 🎨';
+  const heroSub   = document.getElementById('hero_subtitle').value || 'เลือกสีที่ชอบ เลือกไซส์ที่ใช่';
+  const bpt = document.getElementById('color_btn_primary_text').value || '#ffffff';
+  const bat = document.getElementById('color_btn_accent_text').value  || '#ffffff';
+  const bc  = document.getElementById('badge_color').value || '#ffffff';
+  const fbg = document.getElementById('color_footer_bg').value   || ps['800'];
+  const ftx = document.getElementById('color_footer_text').value || '#ffffff';
+  const badges = ['badge_1','badge_2','badge_3','badge_4']
+    .filter(id => document.getElementById(id+'_enabled')?.checked !== false)
+    .map(id => document.getElementById(id)?.value).filter(Boolean);
+  const ps = colorScale(p), as = colorScale(a);
+
+  const lc = document.getElementById('color_logo').value || ps['700'];
+  const logoHtml = currentLogoImage
+    ? `<img src="${currentLogoImage}" style="height:28px;width:auto;object-fit:contain;vertical-align:middle"> <span style="color:${lc}">${name}</span>`
+    : `<span style="color:${lc}">${icon} ${name}</span>`;
+
+  const navHtml = `
+    <div class="pv-nav" style="background:white;border-color:${ps['100']}">
+      <span class="pv-logo">${logoHtml}</span>
+      <button class="pv-btn" style="background:${ps['600']};color:${bpt}">🛒 ตะกร้า</button>
+    </div>`;
+
+  const footerHtml = `
+    <div style="background:${fbg};padding:12px 16px;border-radius:0 0 10px 10px">
+      <div style="font-size:0.7rem;font-weight:700;color:${ftx};margin-bottom:3px">${icon} ${name}</div>
+      <div style="display:flex;gap:14px;margin-top:4px">
+        <div><div style="font-size:0.62rem;font-weight:700;color:${ftx};margin-bottom:2px">เมนู</div>
+          <div style="font-size:0.58rem;color:${ftx};opacity:0.6">หน้าแรก · ติดตามออเดอร์</div></div>
+        <div><div style="font-size:0.62rem;font-weight:700;color:${ftx};margin-bottom:2px">ติดต่อ</div>
+          <div style="font-size:0.58rem;color:${ftx};opacity:0.6">Line · Facebook</div></div>
+      </div>
+      <div style="font-size:0.55rem;color:${ftx};opacity:0.35;margin-top:6px;border-top:1px solid rgba(128,128,128,0.15);padding-top:5px;text-align:center">© 2024 ${name}</div>
+    </div>`;
+
+  // ── หน้าแรก ──
+  document.getElementById('pvHome').innerHTML = `
+    <div style="background:${bg};font-family:inherit">
+      ${navHtml}
+      <div class="pv-hero" style="background:linear-gradient(135deg,${ps['600']},${ps['500']})">
+        <h2 style="color:${ht};margin:0 0 4px">${heroTitle}</h2>
+        <p style="color:${hs};margin:0;font-size:0.75rem">${heroSub}</p>
+        ${badges.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;justify-content:center">${badges.map(b=>`<span style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);padding:3px 10px;border-radius:50px;font-size:0.62rem;font-weight:600;color:${bc}">${b}</span>`).join('')}</div>` : ''}
+      </div>
+      ${_pvBanners && _pvBanners.length ? `
+      <div style="margin:0;overflow:hidden;position:relative;height:90px;background:#111">
+        ${_pvBanners[0].image_path
+          ? `<img src="${_pvBanners[0].image_path}" style="width:100%;height:100%;object-fit:cover;display:block">`
+          : `<div style="width:100%;height:100%;background:linear-gradient(135deg,${ps['700']},${ps['500']});display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:8px;box-sizing:border-box">
+              ${_pvBanners[0].title ? `<div style="color:#fff;font-weight:800;font-size:0.75rem;text-align:center">${_pvBanners[0].title}</div>` : ''}
+              ${_pvBanners[0].subtitle ? `<div style="color:rgba(255,255,255,0.8);font-size:0.6rem;text-align:center">${_pvBanners[0].subtitle}</div>` : ''}
+            </div>`}
+        ${_pvBanners.length > 1 ? `<div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);display:flex;gap:4px">${_pvBanners.map((_,i)=>`<span style="width:${i===0?'14':'6'}px;height:6px;border-radius:3px;background:rgba(255,255,255,${i===0?'0.95':'0.45'});transition:width 0.3s"></span>`).join('')}</div>` : ''}
+      </div>` : ''}
+      <div class="pv-products">
+        ${[['👕','เสื้อโอเวอร์ไซส์','฿290'],['👕','เสื้อเบสิค','฿250']].map(([em,nm,pr])=>`
+        <div class="pv-product">
+          <div class="pv-product-img" style="background:${ps['50']}">${em}</div>
+          <div class="pv-product-info">
+            <div class="pv-product-name" style="color:${td}">${nm}</div>
+            <div style="font-size:0.68rem;color:${tl}">Cotton 100%</div>
+            <div class="pv-product-price" style="color:${as['600']}">${pr}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div style="padding:8px 16px 12px;display:flex;gap:6px">
+        <button style="flex:1;padding:7px;border-radius:8px;border:none;background:${ps['600']};color:${bpt};font-size:0.68rem;font-weight:700">🛒 เพิ่มลงตะกร้า</button>
+        <button style="flex:1;padding:7px;border-radius:8px;border:none;background:${as['600']};color:${bat};font-size:0.68rem;font-weight:700">✅ สั่งซื้อ</button>
+      </div>
+      <div style="padding:6px 16px 10px;border-top:1px solid ${ps['100']}">
+        <div style="font-size:0.68rem;color:${tb}">ข้อความทั่วไป</div>
+        <div style="font-size:0.62rem;color:${tl}">placeholder · hint · label</div>
+      </div>
+      ${footerHtml}
+    </div>`;
+
+  // ── หน้าสั่งซื้อ ──
+  const chHead  = document.getElementById('color_checkout_heading').value || ps['700'];
+  const bankBg  = document.getElementById('color_bank_bg').value || ps['700'];
+  const bankTx  = document.getElementById('color_bank_text').value || '#ffffff';
+  const pvBankName = document.getElementById('bank_name')?.value         || 'ธนาคารกสิกรไทย (KBank)';
+  const pvBankAcc  = document.getElementById('bank_account')?.value      || 'xxx-x-xxxxx-x';
+  const pvBankAccN = document.getElementById('bank_account_name')?.value || 'EasyCart Store';
+  document.getElementById('pvCheckout').innerHTML = `
+    <div style="background:${bg};font-family:inherit">
+      ${navHtml}
+      <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:white;border-radius:10px;padding:12px;border:1px solid ${ps['100']}">
+          <div style="font-size:0.72rem;font-weight:800;color:${chHead};margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid ${ps['50']}">📦 ข้อมูลจัดส่ง</div>
+          ${['ชื่อ–นามสกุล','เบอร์โทรศัพท์','ที่อยู่จัดส่ง'].map(l=>`
+            <div style="margin-bottom:7px">
+              <div style="font-size:0.6rem;font-weight:700;color:${tb};margin-bottom:3px">${l}</div>
+              <div style="background:${bg};border:1.5px solid ${ps['100']};border-radius:6px;height:22px"></div>
+            </div>`).join('')}
+        </div>
+        <div>
+          <div style="background:white;border-radius:10px;padding:12px;border:1px solid ${ps['100']};margin-bottom:8px">
+            <div style="font-size:0.72rem;font-weight:800;color:${chHead};margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid ${ps['50']}">💳 ชำระเงิน</div>
+            <div style="background:${bankBg};border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:0.6rem;color:${bankTx};opacity:0.75;margin-bottom:2px">${pvBankName}</div>
+              <div style="font-size:1rem;font-weight:900;color:${bankTx};letter-spacing:2px">${pvBankAcc}</div>
+              <div style="font-size:0.58rem;color:${bankTx};opacity:0.7">${pvBankAccN}</div>
+            </div>
+          </div>
+          <div style="background:white;border-radius:10px;padding:12px;border:1px solid ${ps['100']}">
+            <div style="font-size:0.72rem;font-weight:800;color:${chHead};margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid ${ps['50']}">🛒 สรุป</div>
+            <div style="font-size:0.62rem;color:${tb};border-bottom:1px solid ${ps['50']};padding-bottom:4px;margin-bottom:4px">เสื้อโอเวอร์ไซส์ · S ×1 <span style="float:right;font-weight:700;color:${td}">฿290</span></div>
+            <div style="font-size:0.7rem;font-weight:800;color:${td}">ยอดรวม <span style="float:right;color:${as['600']}">฿290</span></div>
+            <button style="width:100%;margin-top:8px;padding:7px;border-radius:8px;border:none;background:${as['600']};color:${bat};font-size:0.68rem;font-weight:700">✅ ยืนยันสั่งซื้อ</button>
+          </div>
+        </div>
+      </div>
+      ${footerHtml}
+    </div>`;
+
+  // ── หน้าติดตาม ──
+  const trTitle = document.getElementById('color_track_title').value || ps['800'];
+  const trSub   = document.getElementById('color_track_sub').value   || td;
+  const trId    = document.getElementById('color_track_id').value    || ps['700'];
+  const trTotal = document.getElementById('color_track_total').value || as['600'];
+  const trStepBg= document.getElementById('color_track_step_bg').value || ps['50'];
+  const stPendBg= document.getElementById('color_status_pending_bg').value  || '#FFF4DD';
+  const stPendTx= document.getElementById('color_status_pending_txt').value || '#7A5500';
+  document.getElementById('pvTrack').innerHTML = `
+    <div style="background:${bg};font-family:inherit">
+      ${navHtml}
+      <div style="padding:14px 14px 0">
+        <div style="font-size:1.1rem;font-weight:900;color:${trTitle};margin-bottom:3px">ติดตามออเดอร์</div>
+        <div style="font-size:0.68rem;color:${trSub};margin-bottom:10px">ใส่เลขออเดอร์หรือเบอร์โทรศัพท์</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <div style="flex:1;background:white;border:1.5px solid ${ps['100']};border-radius:8px;height:30px"></div>
+          <button style="padding:0 12px;background:${ps['600']};color:${bpt};border:none;border-radius:8px;font-size:0.68rem;font-weight:700">🔍 ค้นหา</button>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px;border:1px solid ${ps['100']}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div>
+              <div style="font-size:0.58rem;color:${tl};font-weight:700;text-transform:uppercase;letter-spacing:0.5px">เลขที่ออเดอร์</div>
+              <div style="font-size:1rem;font-weight:900;color:${trId};letter-spacing:1px">EC55022601</div>
+            </div>
+            <span style="background:${stPendBg};color:${stPendTx};font-size:0.58rem;font-weight:700;padding:3px 8px;border-radius:50px">⏳ รอชำระ</span>
+          </div>
+          <div style="background:${trStepBg};border-radius:8px;padding:10px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-end">
+              ${[['⏳','รอชำระ','done'],['💰','โอนแล้ว','done'],['✅','ยืนยัน','active'],['🚚','จัดส่ง',''],['📦','รับแล้ว','']].map(([e,l,s])=>`
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;
+                  background:${s==='active'?as['600']:s==='done'?ps['400']:'#e5e7eb'};
+                  opacity:${s?1:0.45};filter:${s?'none':'grayscale(1)'}">${e}</div>
+                <div style="font-size:0.55rem;font-weight:600;color:${s==='active'?as['600']:s==='done'?ps['600']:tl};opacity:${s?1:0.5}">${l}</div>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div style="border-top:1px solid ${ps['50']};padding-top:8px">
+            <div style="font-size:0.62rem;color:${tb};margin-bottom:3px">เสื้อโอเวอร์ไซส์ ดำ · L ×1 <span style="float:right;font-weight:700;color:${td}">฿290</span></div>
+            <div style="font-size:0.7rem;font-weight:800;border-top:1px solid ${ps['100']};margin-top:5px;padding-top:5px;color:${td}">ยอดรวม <span style="float:right;color:${trTotal}">฿290</span></div>
+          </div>
+        </div>
+      </div>
+      ${footerHtml}
+    </div>`;
+
+  // ── หน้าสินค้า ──
+  const pnColor  = document.getElementById('color_product_name').value       || ps['800'];
+  const ppColor  = document.getElementById('color_product_price').value      || as['600'];
+  const pgBg     = document.getElementById('color_product_gallery_bg').value || ps['50'];
+  const pdBg     = document.getElementById('color_product_desc_bg').value    || '#f8f9fa';
+  const pdText   = document.getElementById('color_product_desc_text').value  || tb;
+  document.getElementById('pvProduct').innerHTML = `
+    <div style="background:${bg};font-family:inherit">
+      ${navHtml}
+      <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+        <div>
+          <div style="background:${pgBg};border-radius:10px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:3.5rem;border:1px solid ${ps['100']}">👕</div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            ${[0,1,2].map(i=>`<div style="width:40px;height:40px;border-radius:8px;background:${pgBg};border:2px solid ${i===0?ps['500']:ps['100']};display:flex;align-items:center;justify-content:center;font-size:1rem">👕</div>`).join('')}
+          </div>
+          <div style="margin-top:10px">
+            <div style="font-size:0.62rem;font-weight:700;color:${tl};text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px">รายละเอียดสินค้า</div>
+            <div style="background:${pdBg};border-radius:8px;padding:10px 12px;font-size:0.62rem;color:${pdText};line-height:1.7;border:1px solid ${ps['100']}">
+              เสื้อยืด Cotton 100% ผ้านุ่ม ระบายอากาศดี ทนทาน ซักได้หลายครั้งไม่หดไม่ยับ เหมาะกับทุกโอกาส
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div style="font-size:0.82rem;font-weight:900;color:${pnColor};line-height:1.3;margin-bottom:4px">เสื้อโอเวอร์ไซส์ Cotton</div>
+            <div style="font-size:1.3rem;font-weight:900;color:${ppColor}">฿290</div>
+          </div>
+          <div>
+            <div style="font-size:0.6rem;font-weight:700;color:${tl};text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">สีที่มี</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              ${[['#1a1a1a','ดำ'],['#ffffff','ขาว'],['#c0392b','แดง']].map(([hex,name],i)=>`
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:28px;height:28px;border-radius:50%;background:${hex};
+                  box-shadow:${i===0?`0 0 0 2.5px ${ps['500']}`:'0 0 0 1.5px #e5e7eb'};
+                  border:2px solid white"></div>
+                <div style="font-size:0.55rem;color:${tl}">${name}</div>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.6rem;font-weight:700;color:${tl};text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">ไซส์</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              ${['S','M','L','XL'].map((s,i)=>`<button style="padding:5px 10px;border-radius:8px;border:2px solid ${i===1?ps['600']:'#e5e7eb'};background:${i===1?ps['600']:'white'};color:${i===1?bpt:td};font-size:0.65rem;font-weight:700">${s}</button>`).join('')}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+            <button style="padding:8px;border-radius:8px;border:none;background:${ps['600']};color:${bpt};font-size:0.68rem;font-weight:700">🛒 เพิ่มลงตะกร้า</button>
+            <button style="padding:8px;border-radius:8px;border:none;background:${as['600']};color:${bat};font-size:0.68rem;font-weight:700">✅ สั่งซื้อเลย</button>
+          </div>
+        </div>
+      </div>
+      ${footerHtml}
+    </div>`;
+
+  // ── หน้าแจ้งโอนเงิน ──
+  const pmTitle  = document.getElementById('color_payment_title').value         || ps['800'];
+  const pmSub    = document.getElementById('color_payment_sub').value           || tl;
+  const pmUpBg   = document.getElementById('color_payment_upload_bg').value     || ps['50'];
+  const pmUpBd   = document.getElementById('color_payment_upload_border').value || ps['200'];
+  const pvBankName2 = document.getElementById('bank_name')?.value         || 'ธนาคารกสิกรไทย (KBank)';
+  const pvBankAcc2  = document.getElementById('bank_account')?.value      || 'xxx-x-xxxxx-x';
+  const pvBankAccN2 = document.getElementById('bank_account_name')?.value || 'EasyCart Store';
+  document.getElementById('pvPayment').innerHTML = `
+    <div style="background:${bg};font-family:inherit">
+      ${navHtml}
+      <div style="padding:14px 16px">
+        <div style="margin-bottom:12px">
+          <div style="font-size:1rem;font-weight:900;color:${pmTitle};margin-bottom:3px">แจ้งโอนเงิน</div>
+          <div style="font-size:0.68rem;color:${pmSub}">อัปโหลดสลิปการโอนเพื่อยืนยันคำสั่งซื้อ</div>
+        </div>
+        <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+          <div style="background:${bankBg};border-radius:10px;padding:12px;text-align:center;margin-bottom:12px">
+            <div style="font-size:0.65rem;color:${bankTx};opacity:0.8;margin-bottom:3px">🏦 ${pvBankName2}</div>
+            <div style="font-size:1rem;font-weight:900;color:${bankTx};letter-spacing:2px">${pvBankAcc2}</div>
+            <div style="font-size:0.6rem;color:${bankTx};opacity:0.7;margin-top:2px">ชื่อบัญชี: ${pvBankAccN2}</div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:0.62rem;font-weight:700;color:${tl};margin-bottom:4px">เลขที่ออเดอร์</div>
+            <div style="border:1.5px solid #e5e7eb;border-radius:8px;padding:7px 10px;font-size:0.72rem;color:${td};font-weight:700;letter-spacing:1px">EC12345678</div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:0.62rem;font-weight:700;color:${tl};margin-bottom:4px">แนบสลิปการโอน</div>
+            <div style="border:2px dashed ${pmUpBd};border-radius:10px;padding:18px 10px;text-align:center;background:${pmUpBg}">
+              <div style="font-size:1.8rem;margin-bottom:4px;opacity:0.7">📎</div>
+              <div style="font-size:0.62rem;font-weight:700;color:${td}">คลิกหรือลากไฟล์มาวางที่นี่</div>
+              <div style="font-size:0.55rem;color:${tl};margin-top:2px">รองรับ JPG, PNG ≤ 5MB</div>
+            </div>
+          </div>
+          <button style="width:100%;padding:9px;border-radius:9px;border:none;background:${as['600']};color:${bat};font-size:0.72rem;font-weight:700">✅ ยืนยันการโอนเงิน</button>
+        </div>
+      </div>
+      ${footerHtml}
+    </div>`;
+
+  renderScalePreview('color_primary');
+  renderScalePreview('color_accent');
+}
+
+function switchPreview(page, btn) {
+  document.querySelectorAll('.pv-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pvHome').style.display     = page === 'home'     ? '' : 'none';
+  document.getElementById('pvCheckout').style.display = page === 'checkout' ? '' : 'none';
+  document.getElementById('pvTrack').style.display    = page === 'track'    ? '' : 'none';
+  document.getElementById('pvProduct').style.display  = page === 'product'  ? '' : 'none';
+  document.getElementById('pvPayment').style.display  = page === 'payment'  ? '' : 'none';
+}
+
+// ===== LOAD CURRENT THEME =====
+async function loadTheme() {
+  const res = await adminFetch('/api/theme');
+  const t = await res.json();
+  const set = (id, val, fallback='') => { const el=document.getElementById(id); if(el) el.value=val||fallback; };
+  const setColor = (id, val, fallback) => {
+    const v = val||fallback;
+    set(id, v); set(id+'_hex', v);
+  };
+  set('store_name', t.store_name, 'EasyCart');
+  set('logo_icon',  t.logo_icon,  '🛒');
+  setColor('color_primary',    t.color_primary,    '#0284C7');
+  setColor('color_accent',     t.color_accent,     '#DB2777');
+  setColor('color_bg',         t.color_bg,         '#F5F8FF');
+  setColor('color_text_dark',  t.color_text_dark,  '#1E2A50');
+  setColor('color_text_body',  t.color_text_body,  '#4A5C88');
+  setColor('color_text_light', t.color_text_light, '#94A3C8');
+  setColor('color_hero_text',        t.color_hero_text,        '#FFFFFF');
+  setColor('color_hero_sub',         t.color_hero_sub,         '#FFFFFF');
+  setColor('color_btn_primary_text', t.color_btn_primary_text, '#FFFFFF');
+  setColor('color_btn_accent_text',  t.color_btn_accent_text,  '#FFFFFF');
+  const setText = (id, val, fallback='') => { const el=document.getElementById(id); if(el) el.value=val||fallback; };
+  setText('bank_name',         t.bank_name,         'ธนาคารกสิกรไทย (KBank)');
+  setText('bank_account',      t.bank_account,      'xxx-x-xxxxx-x');
+  setText('bank_account_name', t.bank_account_name, 'EasyCart Store');
+  setColor('color_payment_title',         t.color_payment_title,         '#1e3a5f');
+  setColor('color_payment_sub',           t.color_payment_sub,           '#94a3b8');
+  setColor('color_payment_upload_bg',     t.color_payment_upload_bg,     '#e0f0ff');
+  setColor('color_payment_upload_border', t.color_payment_upload_border, '#7dd3fc');
+  setColor('color_product_name',       t.color_product_name,       '#1e3a5f');
+  setColor('color_product_price',      t.color_product_price,      '#DB2777');
+  setColor('color_product_gallery_bg', t.color_product_gallery_bg, '#e0f0ff');
+  setColor('color_product_desc_bg',    t.color_product_desc_bg,    '#f8f9fa');
+  setColor('color_product_desc_text',  t.color_product_desc_text,  '#4b5563');
+  setColor('color_checkout_heading', t.color_checkout_heading, '#0284C7');
+  setColor('color_bank_bg',          t.color_bank_bg,          '#0284C7');
+  setColor('color_bank_text',        t.color_bank_text,        '#FFFFFF');
+  setColor('color_logo', t.color_logo, '#0284C7');
+  setColor('color_track_title', t.color_track_title, '#0284C7');
+  setColor('color_track_sub',   t.color_track_sub,   '#94A3C8');
+  setColor('color_track_id',              t.color_track_id,              '#0284C7');
+  setColor('color_track_total',           t.color_track_total,           '#DB2777');
+  setColor('color_track_step_bg',         t.color_track_step_bg,         '#F0F9FF');
+  setColor('color_status_pending_bg',     t.color_status_pending_bg,     '#FFF4DD');
+  setColor('color_status_pending_txt',    t.color_status_pending_txt,    '#7A5500');
+  setColor('color_status_shipped_bg',     t.color_status_shipped_bg,     '#E2D9F3');
+  setColor('color_status_shipped_txt',    t.color_status_shipped_txt,    '#4A2880');
+  setColor('color_status_delivered_bg',   t.color_status_delivered_bg,   '#D4EDDA');
+  setColor('color_status_delivered_txt',  t.color_status_delivered_txt,  '#0A4020');
+  setColor('color_footer_bg',   t.color_footer_bg,   '#0c4a6e');
+  setColor('color_footer_text', t.color_footer_text, '#FFFFFF');
+  set('badge_1', t.badge_1, '✦ Cotton 100%');
+  set('badge_2', t.badge_2, '🚚 ส่งทั่วไทย');
+  set('badge_3', t.badge_3, '✦ หลากสีให้เลือก');
+  set('badge_4', t.badge_4, '🌟 คุณภาพดี ราคาเป็นมิตร');
+  [1,2,3,4].forEach(n => {
+    const el = document.getElementById('badge_'+n+'_enabled');
+    if (el) el.checked = (t['badge_'+n+'_enabled'] !== '0');
+  });
+  setColor('badge_color', t.badge_color, '#FFFFFF');
+  set('font_family',   t.font_family,   'Noto Sans Thai');
+  set('hero_title',    t.hero_title);
+  set('hero_subtitle', t.hero_subtitle);
+  set('footer_desc',   t.footer_desc);
+  set('footer_line',   t.footer_line);
+  set('footer_fb',     t.footer_fb);
+  set('footer_email',  t.footer_email);
+  set('footer_copy',   t.footer_copy);
+  // logo image
+  currentLogoImage = t.logo_image || '';
+  setLogoPreview(currentLogoImage);
+  // size chart
+  loadSizeChart(t.size_chart_image || '');
+  // slider toggle
+  setSliderToggleUI(t.gallery_slider_enabled !== '0');
+  // popup
+  setPopupToggleUI(t.popup_enabled === '1');
+  loadPopupImage(t.popup_image || '');
+  if (t.popup_link) document.getElementById('popup_link').value = t.popup_link;
+  updatePreview();
+}
+
+// ===== SAVE THEME =====
+async function saveTheme() {
+  const btn = document.getElementById('saveThemeBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  const g = id => document.getElementById(id)?.value || '';
+  const body = {
+    store_name:       g('store_name'),
+    logo_icon:        g('logo_icon'),
+    color_primary:    g('color_primary'),
+    color_accent:     g('color_accent'),
+    color_bg:         g('color_bg'),
+    color_text_dark:  g('color_text_dark'),
+    color_text_body:  g('color_text_body'),
+    color_text_light: g('color_text_light'),
+    color_hero_text:        g('color_hero_text'),
+    color_hero_sub:         g('color_hero_sub'),
+    color_btn_primary_text: g('color_btn_primary_text'),
+    color_btn_accent_text:  g('color_btn_accent_text'),
+    color_track_title:          g('color_track_title'),
+    color_track_sub:            g('color_track_sub'),
+    color_track_id:             g('color_track_id'),
+    color_track_total:          g('color_track_total'),
+    color_track_step_bg:        g('color_track_step_bg'),
+    color_status_pending_bg:    g('color_status_pending_bg'),
+    color_status_pending_txt:   g('color_status_pending_txt'),
+    color_status_shipped_bg:    g('color_status_shipped_bg'),
+    color_status_shipped_txt:   g('color_status_shipped_txt'),
+    color_status_delivered_bg:  g('color_status_delivered_bg'),
+    color_status_delivered_txt: g('color_status_delivered_txt'),
+    bank_name:         document.getElementById('bank_name')?.value         || '',
+    bank_account:      document.getElementById('bank_account')?.value      || '',
+    bank_account_name: document.getElementById('bank_account_name')?.value || '',
+    color_payment_title:         g('color_payment_title'),
+    color_payment_sub:           g('color_payment_sub'),
+    color_payment_upload_bg:     g('color_payment_upload_bg'),
+    color_payment_upload_border: g('color_payment_upload_border'),
+    color_product_name:       g('color_product_name'),
+    color_product_price:      g('color_product_price'),
+    color_product_gallery_bg: g('color_product_gallery_bg'),
+    color_product_desc_bg:    g('color_product_desc_bg'),
+    color_product_desc_text:  g('color_product_desc_text'),
+    color_checkout_heading: g('color_checkout_heading'),
+    color_bank_bg:          g('color_bank_bg'),
+    color_bank_text:        g('color_bank_text'),
+    color_logo:        g('color_logo'),
+    color_footer_bg:   g('color_footer_bg'),
+    color_footer_text: g('color_footer_text'),
+    badge_1: g('badge_1'), badge_2: g('badge_2'),
+    badge_3: g('badge_3'), badge_4: g('badge_4'),
+    badge_1_enabled: document.getElementById('badge_1_enabled')?.checked ? '1' : '0',
+    badge_2_enabled: document.getElementById('badge_2_enabled')?.checked ? '1' : '0',
+    badge_3_enabled: document.getElementById('badge_3_enabled')?.checked ? '1' : '0',
+    badge_4_enabled: document.getElementById('badge_4_enabled')?.checked ? '1' : '0',
+    badge_color: g('badge_color'),
+    font_family:      g('font_family'),
+    hero_title:       g('hero_title'),
+    hero_subtitle:    g('hero_subtitle'),
+    footer_desc:      g('footer_desc'),
+    footer_line:      g('footer_line'),
+    footer_fb:        g('footer_fb'),
+    footer_email:     g('footer_email'),
+    footer_copy:      g('footer_copy'),
+  };
+  const res = await adminFetch('/api/admin/theme', { method:'PUT', body: JSON.stringify(body) });
+  const data = await res.json();
+  if (data.ok) showToast('บันทึกธีมแล้ว ✅', 'success');
+  else showToast('เกิดข้อผิดพลาด', 'error');
+  btn.disabled = false; btn.textContent = '💾 บันทึกธีม';
+}
+
+// ===== SLIDER TOGGLE =====
+function setSliderToggleUI(enabled) {
+  var cb = document.getElementById('gallery_slider_enabled');
+  var track = document.getElementById('sliderToggleTrack');
+  var thumb = document.getElementById('sliderToggleThumb');
+  if (!cb) return;
+  cb.checked = enabled;
+  track.style.background = enabled ? 'var(--primary, #0284C7)' : '#ccc';
+  thumb.style.left = enabled ? '25px' : '3px';
+}
+async function saveSliderToggle(cb) {
+  setSliderToggleUI(cb.checked);
+  await adminFetch('/api/admin/theme', { method:'PUT', body: JSON.stringify({ gallery_slider_enabled: cb.checked ? '1' : '0' }) });
+  showToast(cb.checked ? 'เปิด Slideshow แล้ว ✅' : 'ปิด Slideshow แล้ว', 'success');
+}
+
+// ===== SIZE CHART =====
+async function uploadSizeChart(input) {
+  if (!input.files[0]) return;
+  const form = new FormData();
+  form.append('image', input.files[0]);
+  const res = await adminFetch('/api/admin/upload-sizechart', { method:'POST', body: form });
+  const data = await res.json();
+  if (data.ok) { showToast('อัปโหลดตาราง Size แล้ว ✅', 'success'); loadSizeChart(data.size_chart_image); }
+  else showToast('อัปโหลดไม่สำเร็จ', 'error');
+  input.value = '';
+}
+async function deleteSizeChart() {
+  if (!confirm('ลบรูปตาราง Size?')) return;
+  await adminFetch('/api/admin/sizechart', { method:'DELETE' });
+  showToast('ลบแล้ว', 'success');
+  loadSizeChart('');
+}
+function loadSizeChart(src) {
+  const wrap = document.getElementById('sizeChartPreviewWrap');
+  const zone = document.getElementById('sizeChartUploadZone');
+  const img = document.getElementById('sizeChartPreview');
+  if (src) { img.src = src; wrap.style.display='block'; zone.style.display='none'; }
+  else { wrap.style.display='none'; zone.style.display='block'; }
+}
+
+// ===== POPUP BANNER =====
+function setPopupToggleUI(enabled) {
+  var cb = document.getElementById('popup_enabled');
+  var track = document.getElementById('popupToggleTrack');
+  var thumb = document.getElementById('popupToggleThumb');
+  if (cb) cb.checked = enabled;
+  if (track) track.style.background = enabled ? 'var(--primary)' : '#ccc';
+  if (thumb) thumb.style.left = enabled ? '25px' : '3px';
+}
+async function savePopupToggle(cb) {
+  setPopupToggleUI(cb.checked);
+  await adminFetch('/api/admin/theme', { method:'PUT', body: JSON.stringify({ popup_enabled: cb.checked ? '1' : '0' }) });
+  showToast(cb.checked ? 'เปิด Popup แล้ว ✅' : 'ปิด Popup แล้ว', 'success');
+}
+let _popupLinkTimer = null;
+function savePopupLink() {
+  clearTimeout(_popupLinkTimer);
+  _popupLinkTimer = setTimeout(async () => {
+    const val = document.getElementById('popup_link').value.trim();
+    await adminFetch('/api/admin/theme', { method:'PUT', body: JSON.stringify({ popup_link: val }) });
+  }, 600);
+}
+async function uploadPopupImage(input) {
+  if (!input.files[0]) return;
+  const form = new FormData(); form.append('image', input.files[0]);
+  const res = await adminFetch('/api/admin/upload-popup', { method:'POST', body: form });
+  const data = await res.json();
+  if (data.ok) { showToast('อัปโหลด Popup แล้ว ✅', 'success'); loadPopupImage(data.popup_image); }
+  else showToast('อัปโหลดไม่สำเร็จ', 'error');
+  input.value = '';
+}
+async function deletePopupImage() {
+  if (!confirm('ลบรูป Popup?')) return;
+  await adminFetch('/api/admin/popup-image', { method:'DELETE' });
+  showToast('ลบแล้ว', 'success');
+  loadPopupImage('');
+}
+function loadPopupImage(src) {
+  const wrap = document.getElementById('popupPreviewWrap');
+  const zone = document.getElementById('popupUploadZone');
+  const img  = document.getElementById('popupPreview');
+  if (src) { img.src = src; wrap.style.display='block'; zone.style.display='none'; }
+  else { wrap.style.display='none'; zone.style.display='block'; }
+}
+
+// ===== TABS =====
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== PASSWORD =====
+function toggleVis(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+function showPassError(msg) {
+  const el = document.getElementById('passError');
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+}
+async function changePassword() {
+  const current = document.getElementById('currentPass').value;
+  const newPass  = document.getElementById('newPass').value;
+  const confirm  = document.getElementById('confirmPass').value;
+  showPassError('');
+  if (!current) { showPassError('กรุณากรอกรหัสผ่านปัจจุบัน'); return; }
+  if (!newPass)  { showPassError('กรุณากรอกรหัสผ่านใหม่'); return; }
+  if (newPass.length < 6) { showPassError('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+  if (newPass !== confirm) { showPassError('รหัสผ่านใหม่ไม่ตรงกัน'); return; }
+  const verifyRes = await fetch('/api/admin/verify', { headers: { 'x-admin-key': current } });
+  if (!verifyRes.ok) { showPassError('รหัสผ่านปัจจุบันไม่ถูกต้อง'); return; }
+  const btn = document.getElementById('savePassBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  const res = await adminFetch('/api/admin/change-password', { method:'PUT', body: JSON.stringify({ newPassword: newPass }) });
+  const data = await res.json();
+  if (data.ok) {
+    sessionStorage.setItem('adminKey', newPass);
+    showToast('เปลี่ยนรหัสผ่านสำเร็จ ✅', 'success');
+    document.getElementById('currentPass').value = '';
+    document.getElementById('newPass').value = '';
+    document.getElementById('confirmPass').value = '';
+  } else { showPassError(data.error || 'เกิดข้อผิดพลาด'); }
+  btn.disabled = false; btn.textContent = '🔐 บันทึกรหัสผ่านใหม่';
+}
+
+loadTheme();
+</script>
+</body>
+</html>

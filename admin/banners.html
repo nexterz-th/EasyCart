@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จัดการ Banner - EasyCart Admin</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>
+    .banner-list { display: grid; gap: 16px; }
+    .banner-card {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .banner-img {
+      width: 110px; height: 70px; object-fit: cover;
+      border-radius: 8px; background: var(--bg); flex-shrink: 0;
+      border: 1px solid var(--border); display: flex; align-items: center;
+      justify-content: center; color: var(--text-light); font-size: 1.5rem;
+      overflow: hidden;
+    }
+    .banner-img img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-info { flex: 1; min-width: 0; }
+    .banner-info h4 { margin: 0 0 4px; font-size: 1rem; }
+    .banner-info p { margin: 0; font-size: 0.82rem; color: var(--text-light); }
+    .banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .badge-active   { background: #d1fae5; color: #065f46; font-size:0.75rem; padding:2px 8px; border-radius:999px; font-weight:600; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; font-size:0.75rem; padding:2px 8px; border-radius:999px; font-weight:600; }
+    #imgPreviewWrap { position: relative; width: 100%; height: 160px; border-radius: 10px; overflow: hidden;
+      background: var(--bg); border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: border-color .2s; }
+    #imgPreviewWrap:hover { border-color: var(--primary); }
+    #imgPreviewWrap img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    #imgPreviewWrap .placeholder { color: var(--text-light); font-size: 0.9rem; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo">🌟 EasyCart</div><p>ระบบจัดการร้านค้า</p></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/admin/dashboard.html"><span class="icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/admin/products.html"><span class="icon">👕</span> จัดการสินค้า</a>
+      <a class="nav-item" href="/admin/orders.html"><span class="icon">📦</span> จัดการออเดอร์</a>
+      <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
+      <a class="nav-item active" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
+      <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
+      <a class="nav-item" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
+      <a href="#" onclick="logout()">🚪 ออกจากระบบ</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <h1>🖼️ Banner หน้าแรก</h1>
+      <button class="btn btn-primary" onclick="openAdd()">+ เพิ่ม Banner</button>
+    </div>
+
+    <div id="bannerList" class="banner-list">
+      <div style="text-align:center;padding:48px;color:var(--text-light)">กำลังโหลด...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="bannerModal">
+  <div class="modal" style="max-width:520px">
+    <h3 id="modalTitle">เพิ่ม Banner</h3>
+    <input type="hidden" id="editId">
+
+    <div id="imgPreviewWrap" onclick="document.getElementById('imgFile').click()">
+      <img id="imgPreview" alt="preview">
+      <div class="placeholder" id="imgPlaceholder">📷 คลิกเพื่ออัปโหลดรูป Banner<br><small style="color:var(--text-light)">แนะนำ 1200×420px, ไม่เกิน 5MB</small></div>
+    </div>
+    <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="previewImg(event)">
+
+    <div class="form-group" style="margin-top:14px">
+      <label>หัวข้อ</label>
+      <input type="text" id="bTitle" placeholder="เช่น ลดราคาพิเศษ 20%">
+    </div>
+    <div class="form-group">
+      <label>คำบรรยาย</label>
+      <input type="text" id="bSubtitle" placeholder="เช่น เฉพาะเสื้อ oversize ทุกไซส์">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>ข้อความปุ่ม</label>
+        <input type="text" id="bBtnText" placeholder="เช่น ดูสินค้า">
+      </div>
+      <div class="form-group">
+        <label>ลิงก์ปุ่ม</label>
+        <input type="text" id="bBtnLink" placeholder="เช่น /products.html">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>ลำดับ (น้อย = แสดงก่อน)</label>
+        <input type="number" id="bOrder" value="10">
+      </div>
+      <div class="form-group">
+        <label>สถานะ</label>
+        <select id="bActive">
+          <option value="1">✅ แสดง</option>
+          <option value="0">🚫 ซ่อน</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('bannerModal')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveBanner()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/admin/admin.js"></script>
+<script>
+let banners = [];
+let pendingFile = null;
+
+async function loadBanners() {
+  const res = await adminFetch('/api/admin/banners');
+  banners = await res.json();
+  render();
+}
+
+function render() {
+  const el = document.getElementById('bannerList');
+  if (!banners.length) {
+    el.innerHTML = `<div style="text-align:center;padding:64px;color:var(--text-light)">ยังไม่มี Banner<br><small>กด "+ เพิ่ม Banner" เพื่อสร้าง</small></div>`;
+    return;
+  }
+  el.innerHTML = banners.map(b => `
+    <div class="banner-card">
+      <div class="banner-img">
+        ${b.image_path ? `<img src="${b.image_path}" alt="">` : '🖼️'}
+      </div>
+      <div class="banner-info">
+        <h4>${b.title || '<span style="color:var(--text-light);font-style:italic">ไม่มีหัวข้อ</span>'}</h4>
+        <p>${b.subtitle || ''}</p>
+        <p style="margin-top:4px">
+          <span class="${b.is_active ? 'badge-active' : 'badge-inactive'}">${b.is_active ? 'แสดง' : 'ซ่อน'}</span>
+          <span style="margin-left:8px;color:var(--text-light)">ลำดับ: ${b.sort_order}</span>
+        </p>
+      </div>
+      <div class="banner-actions">
+        <button class="btn btn-outline btn-sm" onclick="openEdit(${b.id})">✏️ แก้ไข</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteBanner(${b.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAdd() {
+  document.getElementById('modalTitle').textContent = 'เพิ่ม Banner';
+  document.getElementById('editId').value = '';
+  document.getElementById('bTitle').value = '';
+  document.getElementById('bSubtitle').value = '';
+  document.getElementById('bBtnText').value = '';
+  document.getElementById('bBtnLink').value = '';
+  document.getElementById('bOrder').value = 10;
+  document.getElementById('bActive').value = '1';
+  resetImgPreview();
+  pendingFile = null;
+  openModal('bannerModal');
+}
+
+function openEdit(id) {
+  const b = banners.find(x => x.id === id);
+  document.getElementById('modalTitle').textContent = 'แก้ไข Banner';
+  document.getElementById('editId').value = id;
+  document.getElementById('bTitle').value = b.title || '';
+  document.getElementById('bSubtitle').value = b.subtitle || '';
+  document.getElementById('bBtnText').value = b.button_text || '';
+  document.getElementById('bBtnLink').value = b.button_link || '';
+  document.getElementById('bOrder').value = b.sort_order;
+  document.getElementById('bActive').value = b.is_active ? '1' : '0';
+  pendingFile = null;
+  if (b.image_path) {
+    document.getElementById('imgPreview').src = b.image_path;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('imgPlaceholder').style.display = 'none';
+  } else {
+    resetImgPreview();
+  }
+  openModal('bannerModal');
+}
+
+function previewImg(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pendingFile = file;
+  const url = URL.createObjectURL(file);
+  document.getElementById('imgPreview').src = url;
+  document.getElementById('imgPreview').style.display = 'block';
+  document.getElementById('imgPlaceholder').style.display = 'none';
+}
+
+function resetImgPreview() {
+  document.getElementById('imgPreview').src = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('imgPlaceholder').style.display = 'flex';
+  document.getElementById('imgFile').value = '';
+}
+
+async function saveBanner() {
+  const id = document.getElementById('editId').value;
+  const body = {
+    title:       document.getElementById('bTitle').value.trim(),
+    subtitle:    document.getElementById('bSubtitle').value.trim(),
+    button_text: document.getElementById('bBtnText').value.trim(),
+    button_link: document.getElementById('bBtnLink').value.trim(),
+    sort_order:  parseInt(document.getElementById('bOrder').value) || 10,
+    is_active:   parseInt(document.getElementById('bActive').value),
+  };
+
+  let savedId = id;
+  if (id) {
+    await adminFetch('/api/admin/banners/' + id, { method: 'PUT', body: JSON.stringify(body) });
+  } else {
+    const res = await adminFetch('/api/admin/banners', { method: 'POST', body: JSON.stringify(body) });
+    const data = await res.json();
+    savedId = data.id;
+  }
+
+  if (pendingFile) {
+    const fd = new FormData();
+    fd.append('image', pendingFile);
+    await adminFetch('/api/admin/banners/' + savedId + '/image', { method: 'POST', body: fd });
+  }
+
+  showToast('บันทึกแล้ว ✅', 'success');
+  closeModal('bannerModal');
+  loadBanners();
+}
+
+async function deleteBanner(id) {
+  if (!confirm('ลบ Banner นี้?')) return;
+  await adminFetch('/api/admin/banners/' + id, { method: 'DELETE' });
+  showToast('ลบแล้ว', 'success');
+  loadBanners();
+}
+
+loadBanners();
+</script>
+</body>
+</html>
