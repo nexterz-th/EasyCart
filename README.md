@@ -76,8 +76,8 @@ npm run dev      # โหมด dev (ต้องมี nodemon)
 แอปจะสร้างไฟล์ฐานข้อมูล `easycart.db` และตารางทั้งหมดให้อัตโนมัติเมื่อรันครั้งแรก
 
 ### 4. เปิดใช้งาน
-- หน้าร้าน: <http://localhost:4829>
-- หลังบ้าน: <http://localhost:4829/admin> (ล็อกอินด้วย `ADMIN_PASS`)
+- หน้าร้าน: <https://easycart.nexterz.com> (โลคัล: `http://localhost:4829`)
+- หลังบ้าน: <https://easycart.nexterz.com/admin> (ล็อกอินด้วย `ADMIN_PASS`)
 
 ---
 
