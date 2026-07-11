@@ -562,6 +562,15 @@ footer {
   color: var(--footer-text, white); opacity: 0.35; font-size: 0.82rem;
   max-width: 1200px; margin-left: auto; margin-right: auto;
 }
+.footer-credit {
+  text-align: center; padding: 8px 0 4px;
+  color: var(--footer-text, white); opacity: 0.45; font-size: 0.8rem;
+}
+.footer-credit a {
+  color: var(--footer-text, white); font-weight: 800;
+  text-decoration: none; opacity: 1;
+}
+.footer-credit a:hover { text-decoration: underline; }
 
 /* ===== LOADER ===== */
 .loader { display: flex; justify-content: center; align-items: center; padding: 72px; }
