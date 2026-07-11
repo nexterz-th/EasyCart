@@ -56,7 +56,10 @@
       <a class="nav-item" href="/admin/sizes.html"><span class="icon">📐</span> จัดการไซส์</a>
       <a class="nav-item" href="/admin/banners.html"><span class="icon">🖼️</span> Banner หน้าแรก</a>
       <a class="nav-item" href="/admin/coupons.html"><span class="icon">🎟️</span> คูปองส่วนลด</a>
-      <a class="nav-item active" href="/admin/settings.html"><span class="icon">⚙️</span> ตั้งค่า</a>
+      <a class="nav-item" data-tabnav="theme" href="/admin/settings.html#theme"><span class="icon">🎨</span> ธีมและการแต่งหน้าเว็บ</a>
+      <a class="nav-item" data-tabnav="sizechart" href="/admin/settings.html#sizechart"><span class="icon">📏</span> ตาราง Size</a>
+      <a class="nav-item" data-tabnav="popup" href="/admin/settings.html#popup"><span class="icon">🎉</span> Popup โปรโมชั่น</a>
+      <a class="nav-item" data-tabnav="password" href="/admin/settings.html#password"><span class="icon">🔑</span> เปลี่ยนรหัสผ่าน</a>
     </nav>
     <div class="sidebar-footer">
       <a href="/" target="_blank">🌐 ดูหน้าเว็บร้านค้า</a>
@@ -67,8 +70,8 @@
   <main class="main-content">
     <div class="topbar"><h1>⚙️ ตั้งค่าระบบ</h1></div>
 
-    <!-- Tabs -->
-    <div class="tab-bar">
+    <!-- Tabs (now driven by sidebar links + URL hash) -->
+    <div class="tab-bar" style="display:none">
       <button class="tab-btn active" onclick="switchTab('theme',this)">🎨 ธีมและการแต่งหน้าเว็บ</button>
       <button class="tab-btn" onclick="switchTab('sizechart',this)">📐 ตาราง Size</button>
       <button class="tab-btn" onclick="switchTab('popup',this)">🎉 Popup โปรโมชั่น</button>
@@ -1322,12 +1325,17 @@ function loadPopupImage(src) {
 }
 
 // ===== TABS =====
-function switchTab(id, btn) {
+function switchTab(id) {
+  const valid = ['theme','sizechart','popup','password'];
+  if (!valid.includes(id)) id = 'theme';
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  btn.classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item[data-tabnav]').forEach(el =>
+    el.classList.toggle('active', el.getAttribute('data-tabnav') === id));
+  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
 }
+function initTabFromHash() { switchTab(location.hash.slice(1) || 'theme'); }
+window.addEventListener('hashchange', initTabFromHash);
 
 // ===== PASSWORD =====
 function toggleVis(id, btn) {
@@ -1365,6 +1373,7 @@ async function changePassword() {
 }
 
 loadTheme();
+initTabFromHash();
 </script>
 </body>
 </html>
