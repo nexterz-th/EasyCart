@@ -76,8 +76,8 @@ npm run dev      # โหมด dev (ต้องมี nodemon)
 แอปจะสร้างไฟล์ฐานข้อมูล `easycart.db` และตารางทั้งหมดให้อัตโนมัติเมื่อรันครั้งแรก
 
 ### 4. เปิดใช้งาน
-- หน้าร้าน: <https://easycart.nexterz.com> (โลคัล: `http://localhost:4829`)
-- หลังบ้าน: <https://easycart.nexterz.com/admin> (ล็อกอินด้วย `ADMIN_PASS`)
+- หน้าร้าน: <http://localhost:4829>
+- หลังบ้าน: <http://localhost:4829/admin> (ล็อกอินด้วย `ADMIN_PASS`)
 
 ---
 
@@ -158,17 +158,65 @@ server {
 
 ### Deploy บน Plesk (Node.js / Passenger)
 
+จะรันบน Plesk มี 2 ขั้นใหญ่ — **เอาโค้ดขึ้น (Git)** แล้ว **ตั้งค่า Node.js**
+
 > ⚠️ **ต้องใช้ Node.js เวอร์ชัน 22.5 ขึ้นไป** เพราะแอปใช้โมดูล built-in `node:sqlite` (แนะนำสาย LTS เช่น `22.x`)
 
-1. เอาโค้ดขึ้น server ผ่าน **Deploy using Git** หรือ **Upload Files**
-2. เปิดหน้า **Node.js** แล้วตั้งค่า:
-   - **Node.js version**: `22.x` ขึ้นไป
-   - **Application Root**: โฟลเดอร์โปรเจกต์
-   - **Application Startup File**: `server.js`
-3. กด **NPM install** เพื่อติดตั้ง dependencies
-4. เพิ่ม **Custom Environment Variables** (แทนไฟล์ `.env` ที่ไม่ถูก commit):
-   `ADMIN_PASS`, `SITE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `STORE_EMAIL`
-   — **ไม่ต้อง**ตั้ง `PORT` เพราะ Passenger กำหนดให้อัตโนมัติผ่าน `process.env.PORT`
-5. กด **Restart App**
+#### 1. เอาโค้ดขึ้นด้วย Git
 
-> หากพบ error เกี่ยวกับ `--experimental-sqlite` ให้เพิ่ม environment variable `NODE_OPTIONS=--experimental-sqlite`
+หน้า Plesk → tab **Get Started** → กด **Deploy using Git**
+
+- **Repository URL:** `https://github.com/nexterz-th/EasyCart.git`
+- **Branch:** `main`
+- repo เป็น Public → ดึงได้เลย ไม่ต้องใส่ token
+- กด **OK** → Plesk จะ clone โค้ดมาไว้ที่ `httpdocs` (หรือโฟลเดอร์ที่เลือก)
+
+> ตั้ง **Auto-deploy** ไว้ด้วยก็ได้ — พอ push ขึ้น GitHub Plesk จะดึงโค้ดใหม่ให้อัตโนมัติ
+
+#### 2. ตั้งค่า Node.js
+
+หน้า Plesk → กด **Node.js** แล้วตั้ง:
+
+| ช่อง | ค่า |
+|---|---|
+| **Node.js version** | `22.x` (LTS) |
+| **Application Mode** | `production` |
+| **Application Root** | โฟลเดอร์ที่ clone โค้ดมา (ที่มี `package.json`) |
+| **Application Startup File** | `server.js` |
+| **Application URL** | `https://easycart.nexterz.com` |
+
+#### 3. ติดตั้ง dependencies
+
+กดปุ่ม **NPM install** (Plesk จะรัน `npm install` ให้ ติดตั้ง express, multer, nodemailer ฯลฯ)
+
+#### 4. ใส่ Environment Variables
+
+ในหน้า Node.js เดียวกัน → **Custom environment variables** → เพิ่ม (แทน `.env` ที่ไม่ถูก commit):
+
+```
+ADMIN_PASS   = รหัสแอดมินที่ตั้งเอง (คาดเดายาก)
+SITE_URL     = https://easycart.nexterz.com
+SMTP_HOST    = (โฮสต์เมลของคุณ)
+SMTP_PORT    = 587
+SMTP_USER    = (อีเมลที่ใช้ส่ง)
+SMTP_PASS    = (รหัสเมล)
+STORE_EMAIL  = (อีเมลรับแจ้งออเดอร์)
+```
+
+> ⚠️ **ห้ามใส่ `PORT`** — Passenger กำหนดให้อัตโนมัติผ่าน `process.env.PORT` ถ้าใส่จะรันไม่ขึ้น
+
+#### 5. Restart
+
+กด **Restart App** → เปิด `https://easycart.nexterz.com`
+
+- หน้าร้าน: `/`
+- หลังบ้าน: `/admin` (ล็อกอินด้วย `ADMIN_PASS`)
+- DB `easycart.db` + ตารางทั้งหมด จะถูกสร้างอัตโนมัติครั้งแรกที่รัน
+
+#### แก้ปัญหาที่พบบ่อย
+
+ถ้าเปิดแล้วเจอ **503 / Application failed** ให้ดู log ที่หน้า Node.js:
+
+- เลือก Node version ต่ำกว่า 22.5 → `Cannot find module 'node:sqlite'` → เปลี่ยนเป็น `22.x`
+- ขึ้นเรื่อง `--experimental-sqlite` → เพิ่ม env `NODE_OPTIONS = --experimental-sqlite`
+- ล็อกอินแอดมินไม่ได้ → เช็คว่า `ADMIN_PASS` ตั้งถูก (ไม่มีเว้นวรรค/เครื่องหมายคำพูดครอบ) และ **กด Restart App หลังแก้ env ทุกครั้ง**
